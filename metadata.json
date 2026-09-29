@@ -1,0 +1,6 @@
+{
+  "name": "Hearth",
+  "description": "A warm, personal daily sanctuary for plans, family memories, photo editing, scripture, recipes, and quiet thoughts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
