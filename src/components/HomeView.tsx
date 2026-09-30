@@ -3,6 +3,7 @@ import {
   ActiveTab,
   PlanItem,
   GalleryPhoto,
+  CuratedSharedAlbum,
   ScriptureVerse,
   ThoughtEntry,
   RecipeItem,
@@ -27,6 +28,8 @@ import {
   ExternalLink,
   Plus,
   BellRing,
+  ShieldCheck,
+  Images,
 } from 'lucide-react';
 import { TeamLogo } from './TeamLogo';
 
@@ -35,6 +38,7 @@ interface HomeViewProps {
   plans: PlanItem[];
   onTogglePlan: (id: string) => void;
   photos: GalleryPhoto[];
+  sharedAlbums?: CuratedSharedAlbum[];
   dailyVerse: ScriptureVerse;
   onNextVerse: () => void;
   thoughts: ThoughtEntry[];
@@ -49,6 +53,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   plans,
   onTogglePlan,
   photos,
+  sharedAlbums = [],
   dailyVerse,
   onNextVerse,
   thoughts,
@@ -404,7 +409,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
 
-        {/* Card 2: Gallery */}
+        {/* Card 2: Curated Shared Albums (Zero Hosting Liability) */}
         <div
           onClick={() => setActiveTab('gallery')}
           className="group cursor-pointer bg-white border border-[#EADBCC] rounded-2xl p-6 transition-all hover:border-[#C4B29E] hover:shadow-sm flex flex-col justify-between"
@@ -412,38 +417,51 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs text-[#8E7E70]">
               <span className="font-medium text-[#2D231C] group-hover:text-[#B84A2A] transition-colors flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-[#B84A2A]" />
-                Photo Gallery
+                <Images className="w-4 h-4 text-[#B84A2A]" />
+                Family Albums
               </span>
-              <span>{photos.length} memories</span>
+              <span className="text-[#059669] font-medium text-[11px] flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Zero Liability
+              </span>
             </div>
             <h3 className="font-serif text-lg font-semibold text-[#2D231C]">
-              Upload & Cherish Photos
+              Curated Shared Albums
             </h3>
             <p className="text-xs text-[#706256] leading-relaxed">
-              Upload photos directly, add captions, tag favorites, and save them safely to this device.
+              Curated family albums linked directly to Google Photos and Apple iCloud. Zero hosting liability and safe for social bio links.
             </p>
 
             {/* Thumbnail preview strip */}
             <div className="grid grid-cols-3 gap-2 pt-2">
-              {favoritePhotos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className="aspect-square rounded-lg overflow-hidden bg-[#F3ECE2] border border-[#EADBCC]"
-                >
-                  <img
-                    src={photo.dataUrl}
-                    alt={photo.title}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              ))}
+              {(sharedAlbums.length > 0 ? sharedAlbums.slice(0, 3) : favoritePhotos).map((item, idx) => {
+                const imgUrl = 'coverImageUrl' in item ? item.coverImageUrl : item.dataUrl;
+                const title = item.title;
+                const provider = 'provider' in item ? item.provider : null;
+                return (
+                  <div
+                    key={'id' in item ? item.id : idx}
+                    className="relative aspect-square rounded-lg overflow-hidden bg-[#F3ECE2] border border-[#EADBCC] group/thumb"
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={title}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-300"
+                    />
+                    {provider && (
+                      <span className="absolute bottom-1 left-1 text-[8px] font-bold text-white bg-black/60 px-1 py-0.2 rounded-xs">
+                        {provider.includes('Google') ? 'Google' : 'Apple'}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           <div className="pt-4 mt-2 border-t border-[#F5ECE1] flex items-center justify-between text-xs font-medium text-[#B84A2A]">
-            <span>Browse & Upload Photos</span>
+            <span>Open Shared Albums ({sharedAlbums.length})</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>

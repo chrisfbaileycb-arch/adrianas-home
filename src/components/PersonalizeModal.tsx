@@ -205,6 +205,8 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
     { id: 'rose-mist', label: 'Rose Mist', color: '#FAF2F0', border: '#ECCDC6' },
     { id: 'sage', label: 'Sage Garden', color: '#F1F6F3', border: '#CDE0D4' },
     { id: 'midnight-warmth', label: 'Midnight Hearth', color: '#1A1614', border: '#3E342E' },
+    { id: 'modern-lounge', label: 'Modern Lounge (Dark/Neo)', color: '#121216', border: '#32323E' },
+    { id: 'neutral-keepsake', label: 'Neutral Keepsake (Minimal)', color: '#F8F7F4', border: '#DDD8CE' },
   ];
 
   const layoutOptions: { id: DailyLayoutChoice; title: string; desc: string }[] = [
@@ -653,6 +655,33 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
                 <p className="text-xs text-[#736558]">
                   Keep your favorite uplifting songs, soothing acoustic playlists, or hymns at your fingertips.
                 </p>
+              </div>
+
+              {/* Music Creation Affiliate Card */}
+              <div className="p-4 bg-gradient-to-r from-[#FAF2ED] to-[#F5EBE1] border border-[#F2C8B5] rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#B84A2A] bg-white px-2 py-0.2 rounded-full border border-[#F2C8B5]">
+                      Music Creation Partner
+                    </span>
+                    <span className="text-xs font-semibold text-[#2D231C]">
+                      Compose Bespoke Family Songs with AI
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#736558] max-w-md font-prose-serif leading-relaxed">
+                    Turn your family stories, anniversary milestones, or children's lullabies into studio-quality acoustic hymns and personalized songs.
+                  </p>
+                </div>
+
+                <a
+                  href="https://suno.com/?ref=familyhearth"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-1.5 bg-[#B84A2A] hover:bg-[#A33F23] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors shadow-2xs whitespace-nowrap shrink-0"
+                >
+                  <span>Compose Song ↗</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
 
               {/* Add Music Form */}

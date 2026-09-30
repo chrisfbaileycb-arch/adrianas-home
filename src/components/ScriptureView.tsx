@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScriptureVerse } from '../types';
+import { ScriptureVerse, UserRole } from '../types';
 import { BookOpen, Heart, Copy, Check, ChevronRight, Plus, Search, Sparkles } from 'lucide-react';
 
 interface ScriptureViewProps {
@@ -8,6 +8,7 @@ interface ScriptureViewProps {
   onNextVerse: () => void;
   onToggleFavoriteVerse: (id: string) => void;
   onAddVerse: (verse: Omit<ScriptureVerse, 'id'>) => void;
+  currentRole?: UserRole;
 }
 
 export const ScriptureView: React.FC<ScriptureViewProps> = ({
@@ -16,6 +17,7 @@ export const ScriptureView: React.FC<ScriptureViewProps> = ({
   onNextVerse,
   onToggleFavoriteVerse,
   onAddVerse,
+  currentRole = 'owner',
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -92,13 +94,19 @@ export const ScriptureView: React.FC<ScriptureViewProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-white bg-[#B84A2A] rounded-lg hover:bg-[#A33F23] transition-colors shadow-xs whitespace-nowrap self-start sm:self-auto"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Add a Verse</span>
-        </button>
+        {currentRole === 'owner' ? (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-white bg-[#B84A2A] rounded-lg hover:bg-[#A33F23] transition-colors shadow-xs whitespace-nowrap self-start sm:self-auto"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add a Verse</span>
+          </button>
+        ) : (
+          <span className="px-3 py-1.5 rounded-full bg-white border border-[#E8DFD3] text-[11px] font-medium text-[#736558] self-start sm:self-auto">
+            Guest View · Read-Only
+          </span>
+        )}
       </div>
 
       {/* Featured Large Contemplation Card */}

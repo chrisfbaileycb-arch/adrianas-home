@@ -1,9 +1,10 @@
-import { PlanItem, GalleryPhoto, ScriptureVerse, ThoughtEntry, RecipeItem, UserProfile, SportsTeam } from '../types';
-import { INITIAL_PLANS, INITIAL_PHOTOS, SCRIPTURE_COLLECTION, INITIAL_THOUGHTS, INITIAL_RECIPES } from '../data/initialData';
+import { PlanItem, GalleryPhoto, CuratedSharedAlbum, ScriptureVerse, ThoughtEntry, RecipeItem, UserProfile, SportsTeam } from '../types';
+import { INITIAL_PLANS, INITIAL_PHOTOS, INITIAL_SHARED_ALBUMS, SCRIPTURE_COLLECTION, INITIAL_THOUGHTS, INITIAL_RECIPES } from '../data/initialData';
 
 const KEYS = {
   PLANS: 'hearth_plans_v1',
   PHOTOS: 'hearth_photos_v1',
+  SHARED_ALBUMS: 'hearth_shared_albums_v1',
   SCRIPTURES: 'hearth_scriptures_v1',
   THOUGHTS: 'hearth_thoughts_v1',
   RECIPES: 'hearth_recipes_v1',
@@ -102,6 +103,23 @@ export const storage = {
     }
   },
 
+  getSharedAlbums(): CuratedSharedAlbum[] {
+    try {
+      const data = localStorage.getItem(KEYS.SHARED_ALBUMS);
+      return data ? JSON.parse(data) : INITIAL_SHARED_ALBUMS;
+    } catch {
+      return INITIAL_SHARED_ALBUMS;
+    }
+  },
+
+  saveSharedAlbums(albums: CuratedSharedAlbum[]): void {
+    try {
+      localStorage.setItem(KEYS.SHARED_ALBUMS, JSON.stringify(albums));
+    } catch (e) {
+      console.error('Error saving shared albums to storage', e);
+    }
+  },
+
   getScriptures(): ScriptureVerse[] {
     try {
       const data = localStorage.getItem(KEYS.SCRIPTURES);
@@ -160,6 +178,7 @@ export const storage = {
       profile: this.getProfile(),
       plans: this.getPlans(),
       photos: this.getPhotos(),
+      sharedAlbums: this.getSharedAlbums(),
       scriptures: this.getScriptures(),
       thoughts: this.getThoughts(),
       recipes: this.getRecipes(),
@@ -173,6 +192,7 @@ export const storage = {
       if (parsed.profile) this.saveProfile(parsed.profile);
       if (parsed.plans) this.savePlans(parsed.plans);
       if (parsed.photos) this.savePhotos(parsed.photos);
+      if (parsed.sharedAlbums) this.saveSharedAlbums(parsed.sharedAlbums);
       if (parsed.scriptures) this.saveScriptures(parsed.scriptures);
       if (parsed.thoughts) this.saveThoughts(parsed.thoughts);
       if (parsed.recipes) this.saveRecipes(parsed.recipes);
@@ -188,6 +208,7 @@ export const storage = {
       localStorage.removeItem(KEYS.PROFILE);
       localStorage.removeItem(KEYS.PLANS);
       localStorage.removeItem(KEYS.PHOTOS);
+      localStorage.removeItem(KEYS.SHARED_ALBUMS);
       localStorage.removeItem(KEYS.SCRIPTURES);
       localStorage.removeItem(KEYS.THOUGHTS);
       localStorage.removeItem(KEYS.RECIPES);

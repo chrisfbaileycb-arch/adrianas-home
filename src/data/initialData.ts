@@ -1,4 +1,4 @@
-import { PlanItem, GalleryPhoto, ScriptureVerse, ThoughtEntry, RecipeItem } from '../types';
+import { PlanItem, GalleryPhoto, CuratedSharedAlbum, ScriptureVerse, ThoughtEntry, RecipeItem } from '../types';
 
 export const INITIAL_PLANS: PlanItem[] = [
   {
@@ -161,6 +161,69 @@ export const INITIAL_PHOTOS: GalleryPhoto[] = [
     caption: 'Before the busy rush begins, a pause for quiet thankfulness.',
     tags: ['Quiet Joy'],
     isFavorite: true,
+  },
+];
+
+export const INITIAL_SHARED_ALBUMS: CuratedSharedAlbum[] = [
+  {
+    id: 'album-1',
+    title: 'Sunday Family Cookouts & Garden Laughs',
+    provider: 'Google Photos',
+    albumUrl: 'https://photos.app.goo.gl/adriana-family-cookouts',
+    coverImageUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80',
+    photoCount: 64,
+    date: 'Summer & Fall 2025',
+    caption: 'The laughter, the kids running barefoot in the clover, and the brisket everyone talked about for days.',
+    tags: ['Family', 'Tradition', 'Cookouts'],
+    isFavorite: true,
+  },
+  {
+    id: 'album-2',
+    title: 'Denver Broncos Mile High Tailgate Memories',
+    provider: 'Apple iCloud',
+    albumUrl: 'https://shared.icloud.com/icu/029broncos-mile-high-sundays',
+    coverImageUrl: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80',
+    photoCount: 42,
+    date: 'Football Season',
+    caption: 'Mile High pride! Cheering loud with the family under bright Colorado blue skies.',
+    tags: ['Broncos', 'Game Day', 'Denver'],
+    isFavorite: true,
+  },
+  {
+    id: 'album-3',
+    title: 'Grandkids Smiles & Golden Meadow Days',
+    provider: 'Google Photos',
+    albumUrl: 'https://photos.app.goo.gl/adriana-grandkids-cherished',
+    coverImageUrl: 'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?auto=format&fit=crop&w=800&q=80',
+    photoCount: 88,
+    date: 'Recent Milestones',
+    caption: 'Every tender smile, first steps, and messy ice cream cones worth holding onto forever.',
+    tags: ['Grandkids', 'Memories', 'Milestones'],
+    isFavorite: true,
+  },
+  {
+    id: 'album-4',
+    title: 'Christmas Morning by the Stone Hearth',
+    provider: 'Apple iCloud',
+    albumUrl: 'https://shared.icloud.com/icu/083hearthside-christmas-memories',
+    coverImageUrl: 'https://images.unsplash.com/photo-1543258103-a62bdc069871?auto=format&fit=crop&w=800&q=80',
+    photoCount: 56,
+    date: 'Holiday Season',
+    caption: 'Warm spiced cider, wrapped packages, and the peace of having everybody gathered together.',
+    tags: ['Christmas', 'Hearth', 'Holidays'],
+    isFavorite: false,
+  },
+  {
+    id: 'album-5',
+    title: 'Mountain Cabin & Lakefront Sunrises',
+    provider: 'Google Photos',
+    albumUrl: 'https://photos.app.goo.gl/adriana-mountain-cabin-retreat',
+    coverImageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80',
+    photoCount: 37,
+    date: 'Spring Getaway',
+    caption: 'Stepping onto the porch with hot black coffee before the rest of the world wakes up.',
+    tags: ['Peace', 'Retreat', 'Nature'],
+    isFavorite: false,
   },
 ];
 

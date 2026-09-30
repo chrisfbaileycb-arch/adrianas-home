@@ -22,6 +22,19 @@ export interface GalleryPhoto {
   isFavorite: boolean;
 }
 
+export interface CuratedSharedAlbum {
+  id: string;
+  title: string;
+  provider: 'Google Photos' | 'Apple iCloud' | 'Amazon Photos' | 'OneDrive' | 'Dropbox';
+  albumUrl: string; // Outbound link e.g. photos.app.goo.gl/... or shared.icloud.com/...
+  coverImageUrl: string;
+  photoCount: number | string;
+  date: string;
+  caption?: string;
+  tags?: string[];
+  isFavorite?: boolean;
+}
+
 export interface ScriptureVerse {
   id: string;
   verse: string;
@@ -90,7 +103,14 @@ export type FontChoice = 'serif' | 'newsreader' | 'sans' | 'mono';
 
 export type DailyLayoutChoice = 'standard' | 'planner-first' | 'journal-first' | 'gallery-focus';
 
-export type WallpaperBackground = 'linen' | 'parchment' | 'rose-mist' | 'sage' | 'midnight-warmth';
+export type WallpaperBackground =
+  | 'linen'
+  | 'parchment'
+  | 'rose-mist'
+  | 'sage'
+  | 'midnight-warmth'
+  | 'modern-lounge'
+  | 'neutral-keepsake';
 
 export interface UserProfile {
   name: string;
@@ -105,3 +125,24 @@ export interface UserProfile {
 }
 
 export type ActiveTab = 'home' | 'plan' | 'gallery' | 'editor' | 'scripture' | 'thoughts' | 'recipes';
+
+export type UserRole = 'owner' | 'guest';
+
+export interface TenantSanctuary {
+  slug: string;             // e.g. "adriana"
+  ownerId: string;
+  sanctuaryName: string;    // "Adriana's Home"
+  familyPinHash?: string;   // bcrypt-hashed 4-digit PIN (server-stored)
+  activeTheme: string;      // "sanctuary_warm", "retro_y2k", "lofi_dark", etc.
+  modulesEnabled: string[]; // ["scripture", "recipes", "albums", "music", "planner", "thoughts"]
+  outboundLinks: {
+    googlePhotosUrl?: string;
+    customMusicUrl?: string;
+    applePhotosUrl?: string;
+  };
+  subscriptionStatus?: 'active' | 'trialing' | 'canceled';
+  planType?: 'monthly' | 'yearly'; // $5/mo or $40/yr
+  ownerEmail?: string;
+  createdAt?: string;
+}
+

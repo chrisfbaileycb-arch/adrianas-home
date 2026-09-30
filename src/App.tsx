@@ -8,14 +8,22 @@ import {
   ActiveTab,
   PlanItem,
   GalleryPhoto,
+  CuratedSharedAlbum,
   ScriptureVerse,
   ThoughtEntry,
   RecipeItem,
   UserProfile,
+  TenantSanctuary,
+  UserRole,
 } from './types';
 import { storage } from './utils/storage';
 import { ambientSound } from './utils/audio';
+import { tenantApi, DEFAULT_TENANT } from './utils/tenantApi';
 import { Navbar } from './components/Navbar';
+import { TenantBar } from './components/TenantBar';
+import { SubscriptionModal } from './components/SubscriptionModal';
+import { MicroAdFlywheelModal } from './components/MicroAdFlywheelModal';
+import { FrontPorchView } from './components/FrontPorchView';
 import { HomeView } from './components/HomeView';
 import { PlanView } from './components/PlanView';
 import { GalleryView } from './components/GalleryView';
@@ -37,12 +45,79 @@ export default function App() {
     'general' | 'teams' | 'music' | 'flower' | 'appearance'
   >('general');
 
+  // Multi-Tenant & Commercial Subscription state
+  const [currentSlug, setCurrentSlug] = useState<string>(() => tenantApi.getSlugFromUrl());
+  const [currentTenant, setCurrentTenant] = useState<TenantSanctuary>(DEFAULT_TENANT);
+  const [currentRole, setCurrentRole] = useState<UserRole>('owner');
+  const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
+  const [isFlywheelOpen, setIsFlywheelOpen] = useState(false);
+
+  // Load tenant details from API or local fallback
+  useEffect(() => {
+    let isMounted = true;
+    tenantApi.fetchTenant(currentSlug).then((tenant) => {
+      if (isMounted && tenant) {
+        setCurrentTenant(tenant);
+        const isOwner = tenantApi.checkIsOwner(tenant.slug, tenant.ownerId);
+        setCurrentRole(isOwner ? 'owner' : 'guest');
+
+        // Apply active theme presets if applicable
+        if (tenant.activeTheme === 'lofi_dark') {
+          setUserProfile((p) => ({ ...p, wallpaperTheme: 'midnight-warmth', fontLayout: 'mono' }));
+        } else if (tenant.activeTheme === 'sage_garden') {
+          setUserProfile((p) => ({ ...p, wallpaperTheme: 'sage', favoriteFlower: 'lavender' }));
+        } else if (tenant.activeTheme === 'retro_y2k') {
+          setUserProfile((p) => ({ ...p, wallpaperTheme: 'rose-mist', fontLayout: 'sans' }));
+        } else if (tenant.activeTheme === 'modern_lounge') {
+          setUserProfile((p) => ({ ...p, wallpaperTheme: 'modern-lounge', fontLayout: 'mono', favoriteFlower: 'none' }));
+        } else if (tenant.activeTheme === 'neutral_keepsake') {
+          setUserProfile((p) => ({ ...p, wallpaperTheme: 'neutral-keepsake', fontLayout: 'newsreader', favoriteFlower: 'olive-branch' }));
+        }
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [currentSlug]);
+
+  const handleSwitchTenant = (slug: string) => {
+    const clean = slug.toLowerCase().replace(/^@/, '');
+    setCurrentSlug(clean);
+    const newPath = `/@${clean}`;
+    window.history.pushState({}, '', newPath);
+  };
+
+  const handleSwitchRole = (newRole: UserRole) => {
+    setCurrentRole(newRole);
+    tenantApi.setOwnerMode(currentSlug, newRole === 'owner', currentTenant.ownerId);
+  };
+
+  const handleUpdatePin = async (newPin: string) => {
+    await tenantApi.updateTenant(currentSlug, { familyPin: newPin });
+  };
+
+  // Guest Front Porch Lock State (persisted per session)
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    try {
+      const slug = tenantApi.getSlugFromUrl();
+      return (
+        sessionStorage.getItem(`hearth_unlocked_${slug}`) === 'true' ||
+        sessionStorage.getItem('adrianas_porch_unlocked') === 'true'
+      );
+    } catch {
+      return false;
+    }
+  });
+
   // User Profile for customizable personal space
   const [userProfile, setUserProfile] = useState<UserProfile>(() => storage.getProfile());
 
   // Core application data loaded from LocalStorage
   const [plans, setPlans] = useState<PlanItem[]>(() => storage.getPlans());
   const [photos, setPhotos] = useState<GalleryPhoto[]>(() => storage.getPhotos());
+  const [sharedAlbums, setSharedAlbums] = useState<CuratedSharedAlbum[]>(() =>
+    storage.getSharedAlbums()
+  );
   const [scriptures, setScriptures] = useState<ScriptureVerse[]>(() => storage.getScriptures());
   const [thoughts, setThoughts] = useState<ThoughtEntry[]>(() => storage.getThoughts());
   const [recipes, setRecipes] = useState<RecipeItem[]>(() => storage.getRecipes());
@@ -92,6 +167,10 @@ export default function App() {
   useEffect(() => {
     storage.savePhotos(photos);
   }, [photos]);
+
+  useEffect(() => {
+    storage.saveSharedAlbums(sharedAlbums);
+  }, [sharedAlbums]);
 
   useEffect(() => {
     storage.saveScriptures(scriptures);
@@ -159,6 +238,7 @@ export default function App() {
     setUserProfile(storage.getProfile());
     setPlans(storage.getPlans());
     setPhotos(storage.getPhotos());
+    setSharedAlbums(storage.getSharedAlbums());
     setScriptures(storage.getScriptures());
     setThoughts(storage.getThoughts());
     setRecipes(storage.getRecipes());
@@ -226,6 +306,34 @@ export default function App() {
     setPhotos((prev) => [newPhoto, ...prev]);
   };
 
+  // Curated Shared Album handlers (Zero Hosting Liability)
+  const handleAddSharedAlbum = (newAlbum: Omit<CuratedSharedAlbum, 'id'>) => {
+    const item: CuratedSharedAlbum = {
+      ...newAlbum,
+      id: `album-${Date.now()}`,
+    };
+    setSharedAlbums((prev) => [item, ...prev]);
+  };
+
+  const handleToggleFavoriteAlbum = (id: string) => {
+    setSharedAlbums((prev) =>
+      prev.map((album) =>
+        album.id === id ? { ...album, isFavorite: !album.isFavorite } : album
+      )
+    );
+  };
+
+  const handleDeleteSharedAlbum = (id: string) => {
+    setSharedAlbums((prev) => prev.filter((album) => album.id !== id));
+  };
+
+  const handleLockPorch = () => {
+    try {
+      sessionStorage.removeItem('adrianas_porch_unlocked');
+    } catch {}
+    setIsUnlocked(false);
+  };
+
   // Scripture handlers
   const handleNextVerse = () => {
     setScriptureIndex((prev) => (prev + 1) % scriptures.length);
@@ -284,15 +392,65 @@ export default function App() {
 
   const currentDailyVerse = scriptures[scriptureIndex % (scriptures.length || 1)] || scriptures[0];
 
+  // Guest Front-Door Passcode Gate (Aesthetic Front Porch for Social Media Bio Links)
+  if (!isUnlocked) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#FAF7F2]">
+        <TenantBar
+          currentTenant={currentTenant}
+          currentRole={currentRole}
+          onSwitchTenant={handleSwitchTenant}
+          onSwitchRole={handleSwitchRole}
+          onOpenSubscribe={() => setIsSubscribeOpen(true)}
+          onUpdatePin={handleUpdatePin}
+          onOpenFlywheel={() => setIsFlywheelOpen(true)}
+        />
+        <div className="flex-1 flex items-center justify-center p-2 sm:p-4">
+          <FrontPorchView
+            onUnlock={() => setIsUnlocked(true)}
+            sanctuaryName={currentTenant.sanctuaryName}
+            sanctuaryFocus={userProfile.sanctuaryFocus}
+            slug={currentTenant.slug}
+          />
+        </div>
+        <SubscriptionModal
+          isOpen={isSubscribeOpen}
+          onClose={() => setIsSubscribeOpen(false)}
+          onTenantCreated={(newSlug) => {
+            handleSwitchTenant(newSlug);
+            setCurrentRole('owner');
+            setIsUnlocked(true);
+          }}
+        />
+        <MicroAdFlywheelModal
+          isOpen={isFlywheelOpen}
+          onClose={() => setIsFlywheelOpen(false)}
+          tenantSlug={currentTenant.slug}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col relative transition-colors duration-500">
       
+      {/* Commercial Multi-Tenant Control & Switcher Bar */}
+      <TenantBar
+        currentTenant={currentTenant}
+        currentRole={currentRole}
+        onSwitchTenant={handleSwitchTenant}
+        onSwitchRole={handleSwitchRole}
+        onOpenSubscribe={() => setIsSubscribeOpen(true)}
+        onUpdatePin={handleUpdatePin}
+        onOpenFlywheel={() => setIsFlywheelOpen(true)}
+      />
+
       {/* Flower Wallpaper Background Motif */}
       <FlowerWallpaperBackdrop flower={userProfile.favoriteFlower} />
 
       {/* In-App Active Reminder Floating Alert */}
       {activeAlert && (
-        <div className="fixed top-18 right-4 sm:right-8 z-50 bg-white border-2 border-[#B84A2A] rounded-2xl p-4 shadow-2xl max-w-sm w-full animate-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-24 right-4 sm:right-8 z-50 bg-white border-2 border-[#B84A2A] rounded-2xl p-4 shadow-2xl max-w-sm w-full animate-in slide-in-from-top-4 duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2.5">
               <div className="p-2 rounded-full bg-[#FAF2ED] text-[#B84A2A] shrink-0 mt-0.5">
@@ -340,7 +498,10 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenBackup={() => setIsBackupOpen(true)}
         onOpenPersonalize={() => handleOpenPersonalizeWithTab('general')}
-        userName={userProfile.name}
+        onLockPorch={handleLockPorch}
+        userName={currentTenant.sanctuaryName || userProfile.name}
+        currentRole={currentRole}
+        modulesEnabled={currentTenant.modulesEnabled}
       />
 
       {/* Main Content Area */}
@@ -351,6 +512,7 @@ export default function App() {
             plans={plans}
             onTogglePlan={handleTogglePlan}
             photos={photos}
+            sharedAlbums={sharedAlbums}
             dailyVerse={currentDailyVerse}
             onNextVerse={handleNextVerse}
             thoughts={thoughts}
@@ -376,11 +538,12 @@ export default function App() {
 
         {activeTab === 'gallery' && (
           <GalleryView
-            photos={photos}
-            onAddPhotos={handleAddPhotos}
-            onToggleFavorite={handleToggleFavoritePhoto}
-            onDeletePhoto={handleDeletePhoto}
-            onEditPhotoInCanvas={handleEditPhotoInCanvas}
+            sharedAlbums={sharedAlbums}
+            onAddSharedAlbum={handleAddSharedAlbum}
+            onToggleFavoriteAlbum={handleToggleFavoriteAlbum}
+            onDeleteSharedAlbum={handleDeleteSharedAlbum}
+            onOpenEditor={() => setActiveTab('editor')}
+            currentRole={currentRole}
           />
         )}
 
@@ -399,6 +562,7 @@ export default function App() {
             onNextVerse={handleNextVerse}
             onToggleFavoriteVerse={handleToggleFavoriteVerse}
             onAddVerse={handleAddVerse}
+            currentRole={currentRole}
           />
         )}
 
@@ -416,6 +580,7 @@ export default function App() {
             onAddRecipe={handleAddRecipe}
             onDeleteRecipe={handleDeleteRecipe}
             onToggleFavoriteRecipe={handleToggleFavoriteRecipe}
+            currentRole={currentRole}
           />
         )}
       </main>
@@ -437,6 +602,24 @@ export default function App() {
         profile={userProfile}
         onSaveProfile={setUserProfile}
         initialTab={personalizeTab}
+      />
+
+      {/* Commercial Stripe Multi-Tenant Subscription Modal ($5/mo or $40/yr) */}
+      <SubscriptionModal
+        isOpen={isSubscribeOpen}
+        onClose={() => setIsSubscribeOpen(false)}
+        onTenantCreated={(newSlug) => {
+          handleSwitchTenant(newSlug);
+          setCurrentRole('owner');
+          setIsUnlocked(true);
+        }}
+      />
+
+      {/* Micro-Ad Flywheel & Creator Growth Modal ($10 Tests & Reinvestment) */}
+      <MicroAdFlywheelModal
+        isOpen={isFlywheelOpen}
+        onClose={() => setIsFlywheelOpen(false)}
+        tenantSlug={currentTenant.slug}
       />
     </div>
   );

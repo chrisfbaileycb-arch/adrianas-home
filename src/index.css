@@ -58,6 +58,14 @@ body.theme-midnight-warmth {
   background-color: #1A1614;
   color: #EDE4DC;
 }
+body.theme-modern-lounge {
+  background-color: #121216;
+  color: #F4F4F5;
+}
+body.theme-neutral-keepsake {
+  background-color: #F8F7F4;
+  color: #2F2E2C;
+}
 
 /* Custom delicate scrollbar */
 ::-webkit-scrollbar {
@@ -73,5 +81,15 @@ body.theme-midnight-warmth {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #C4B5A5;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
 }
 
