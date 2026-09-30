@@ -16,6 +16,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { tenantApi } from '../utils/tenantApi';
+import { saveTenantToFirestore } from '../services/firebaseTenants';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -117,6 +118,17 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         sanctuaryName: result.tenant.sanctuaryName,
         adminSetupUrl: result.adminSetupUrl,
       });
+
+      // Synchronize newly created sanctuary to Firestore backend
+      saveTenantToFirestore({
+        slug: result.tenant.slug,
+        sanctuaryName: result.tenant.sanctuaryName,
+        activeTheme,
+        modulesEnabled,
+        planType,
+        subscriptionStatus: 'active',
+        ownerEmail: ownerEmail.trim(),
+      }).catch((e) => console.warn('Firestore tenant provision:', e));
 
       setStep(3);
     } catch (err: any) {

@@ -11,6 +11,10 @@ import {
   Lock,
   Sparkles,
   Crown,
+  Cloud,
+  Check,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { ambientSound, CURATED_TRACKS, AudioTrack } from '../utils/audio';
 
@@ -23,6 +27,15 @@ interface NavbarProps {
   userName: string;
   currentRole?: UserRole;
   modulesEnabled?: string[];
+  currentUser?: {
+    uid: string;
+    displayName?: string | null;
+    email?: string | null;
+    photoURL?: string | null;
+  } | null;
+  onSignInGoogle?: () => void;
+  onSignOut?: () => void;
+  isCloudSynced?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -34,6 +47,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   userName,
   currentRole = 'owner',
   modulesEnabled = ['scripture', 'recipes', 'albums', 'music', 'planner', 'thoughts'],
+  currentUser,
+  onSignInGoogle,
+  onSignOut,
+  isCloudSynced = true,
 }) => {
   const [audioState, setAudioState] = useState<{
     isPlaying: boolean;
@@ -260,6 +277,56 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <span>Own the full song on Bandcamp / Stream on Spotify ↗</span>
           </a>
+
+          {/* Cloud Sync Status Indicator */}
+          <div
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#E8DFD3] text-[10px] font-medium shadow-2xs"
+            title="Connected to Firebase Firestore live backend"
+          >
+            <Cloud className="w-3 h-3 text-[#059669]" />
+            <span className="text-[#059669] font-semibold">Cloud Synced</span>
+          </div>
+
+          {/* Google Auth User Pill */}
+          {currentUser ? (
+            <div className="flex items-center gap-1.5 bg-white border border-[#E8DFD3] pl-1.5 pr-2 py-0.5 rounded-full shadow-2xs">
+              {currentUser.photoURL ? (
+                <img
+                  src={currentUser.photoURL}
+                  alt={currentUser.displayName || 'User'}
+                  className="w-5 h-5 rounded-full object-cover border border-[#E8DFD3]"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-[#FAF2ED] text-[#B84A2A] flex items-center justify-center text-[10px] font-bold">
+                  {currentUser.displayName?.[0] || 'U'}
+                </div>
+              )}
+              <span className="text-[11px] font-medium text-[#2D231C] max-w-[80px] truncate hidden md:inline">
+                {currentUser.displayName?.split(' ')[0] || 'Member'}
+              </span>
+              {onSignOut && (
+                <button
+                  onClick={onSignOut}
+                  title="Sign out of Firebase"
+                  className="text-[#8F7F72] hover:text-[#B84A2A] transition-colors p-0.5"
+                >
+                  <LogOut className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          ) : (
+            onSignInGoogle && (
+              <button
+                onClick={onSignInGoogle}
+                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#2D231C] bg-white border border-[#E8DFD3] rounded-full hover:border-[#B84A2A] hover:bg-[#FAF2ED] transition-all shadow-2xs whitespace-nowrap"
+                title="Sign in with Google to sync across all devices"
+              >
+                <UserIcon className="w-3 h-3 text-[#B84A2A]" />
+                <span className="hidden sm:inline">Sign In</span>
+              </button>
+            )
+          )}
 
           {/* My Personal Expression Page */}
           <button

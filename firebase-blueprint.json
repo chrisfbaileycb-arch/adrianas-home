@@ -1,0 +1,411 @@
+{
+  "entities": {
+    "TenantSanctuary": {
+      "title": "TenantSanctuary",
+      "description": "Multi-tenant family sanctuary configuration, security PIN hash, active theme, and subscription status.",
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Unique URL identifier for the sanctuary",
+          "pattern": "^[a-z0-9\\-]+$",
+          "maxLength": 64
+        },
+        "sanctuaryName": {
+          "type": "string",
+          "description": "Display name of the family sanctuary",
+          "maxLength": 100
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the sanctuary owner",
+          "maxLength": 128
+        },
+        "pinHash": {
+          "type": "string",
+          "description": "Bcrypt or SHA256 hashed 4-digit PIN",
+          "maxLength": 128
+        },
+        "activeTheme": {
+          "type": "string",
+          "description": "Selected visual theme preset",
+          "enum": [
+            "sanctuary_warm",
+            "sage_garden",
+            "lofi_dark",
+            "retro_y2k",
+            "modern_lounge",
+            "neutral_keepsake"
+          ]
+        },
+        "planType": {
+          "type": "string",
+          "description": "Subscription tier",
+          "enum": ["monthly", "yearly"]
+        },
+        "subscriptionStatus": {
+          "type": "string",
+          "description": "Stripe/Commercial subscription status",
+          "enum": ["active", "trial", "past_due", "canceled"]
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of sanctuary creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["slug", "sanctuaryName", "ownerId", "activeTheme", "subscriptionStatus"]
+    },
+    "Recipe": {
+      "title": "Recipe",
+      "description": "A family culinary recipe with ingredients, instructions, and memory notes.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique recipe document identifier",
+          "maxLength": 128
+        },
+        "tenantSlug": {
+          "type": "string",
+          "description": "Slug of the parent sanctuary",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "description": "Recipe title",
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "description": "Culinary category",
+          "maxLength": 50
+        },
+        "prepTime": {
+          "type": "string",
+          "description": "Preparation duration",
+          "maxLength": 30
+        },
+        "cookTime": {
+          "type": "string",
+          "description": "Baking or cooking duration",
+          "maxLength": 30
+        },
+        "servings": {
+          "type": "string",
+          "description": "Number of family portions",
+          "maxLength": 30
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of the dish",
+          "maxLength": 500
+        },
+        "notes": {
+          "type": "string",
+          "description": "Hearth tradition or family note",
+          "maxLength": 1000
+        },
+        "isFavorite": {
+          "type": "boolean",
+          "description": "Whether marked as a family favorite"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "UID of creator",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO creation timestamp"
+        }
+      },
+      "required": ["title", "category", "tenantSlug", "authorId"]
+    },
+    "SharedAlbum": {
+      "title": "SharedAlbum",
+      "description": "Zero-liability cloud photo link to Google Photos or Apple iCloud.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique album document identifier",
+          "maxLength": 128
+        },
+        "tenantSlug": {
+          "type": "string",
+          "description": "Slug of the parent sanctuary",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "description": "Album title",
+          "maxLength": 120
+        },
+        "description": {
+          "type": "string",
+          "description": "Album story or occasion",
+          "maxLength": 500
+        },
+        "cloudPlatform": {
+          "type": "string",
+          "description": "Target cloud provider",
+          "enum": ["google-photos", "icloud", "dropbox", "onedrive", "other"]
+        },
+        "albumUrl": {
+          "type": "string",
+          "description": "Direct URL to shared cloud album",
+          "maxLength": 500
+        },
+        "coverImageUrl": {
+          "type": "string",
+          "description": "Thumbnail preview image URL",
+          "maxLength": 500
+        },
+        "isFavorite": {
+          "type": "boolean",
+          "description": "Pinned to top of gallery"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "UID of creator",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["title", "tenantSlug", "cloudPlatform", "albumUrl", "authorId"]
+    },
+    "ScriptureVerse": {
+      "title": "ScriptureVerse",
+      "description": "Curated grounding Bible verses and daily reflections.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique verse document identifier",
+          "maxLength": 128
+        },
+        "tenantSlug": {
+          "type": "string",
+          "description": "Slug of the parent sanctuary",
+          "maxLength": 64
+        },
+        "reference": {
+          "type": "string",
+          "description": "Scripture reference e.g. Psalm 23:1-3",
+          "maxLength": 100
+        },
+        "text": {
+          "type": "string",
+          "description": "Verse scripture text",
+          "maxLength": 1500
+        },
+        "translation": {
+          "type": "string",
+          "description": "Translation version e.g. ESV, NIV, KJV",
+          "maxLength": 30
+        },
+        "notes": {
+          "type": "string",
+          "description": "Personal reflection or memory",
+          "maxLength": 1000
+        },
+        "authorId": {
+          "type": "string",
+          "description": "UID of creator",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["reference", "text", "tenantSlug", "authorId"]
+    },
+    "ThoughtEntry": {
+      "title": "ThoughtEntry",
+      "description": "Private family experiences and journal reflections.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique entry identifier",
+          "maxLength": 128
+        },
+        "tenantSlug": {
+          "type": "string",
+          "description": "Slug of the parent sanctuary",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "description": "Entry title",
+          "maxLength": 120
+        },
+        "content": {
+          "type": "string",
+          "description": "Journal prose content",
+          "maxLength": 4000
+        },
+        "mood": {
+          "type": "string",
+          "description": "Emotional mood label",
+          "maxLength": 40
+        },
+        "authorId": {
+          "type": "string",
+          "description": "UID of author",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["title", "content", "tenantSlug", "authorId"]
+    },
+    "PlannerItem": {
+      "title": "PlannerItem",
+      "description": "Daily family intentions, reminders, and scheduled chimes.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique planner item identifier",
+          "maxLength": 128
+        },
+        "tenantSlug": {
+          "type": "string",
+          "description": "Slug of the parent sanctuary",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "description": "Intention or task title",
+          "maxLength": 150
+        },
+        "time": {
+          "type": "string",
+          "description": "Optional scheduled time e.g. 08:30 AM",
+          "maxLength": 30
+        },
+        "reminderTime": {
+          "type": "string",
+          "description": "Optional chime alert time e.g. 14:00",
+          "maxLength": 20
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes",
+          "maxLength": 500
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Completion checkbox status"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "UID of author",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["title", "tenantSlug", "authorId"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User personalization preferences, sports teams, and aesthetics.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 128
+        },
+        "sanctuaryFocus": {
+          "type": "string",
+          "description": "Personal focus or family motto",
+          "maxLength": 250
+        },
+        "favoriteFlower": {
+          "type": "string",
+          "description": "Wallpaper flower motif",
+          "maxLength": 50
+        },
+        "fontLayout": {
+          "type": "string",
+          "description": "Typography choice",
+          "enum": ["serif", "newsreader", "sans", "mono"]
+        },
+        "wallpaperTheme": {
+          "type": "string",
+          "description": "Background tint",
+          "enum": ["linen", "parchment", "rose-mist", "sage", "midnight-warmth", "modern-lounge", "neutral-keepsake"]
+        },
+        "dailyLayout": {
+          "type": "string",
+          "description": "Layout organization choice",
+          "enum": ["standard", "planner-first", "journal-first", "gallery-focus"]
+        },
+        "reminderSoundEnabled": {
+          "type": "boolean",
+          "description": "Audible alert toggle"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["userId", "name"]
+    }
+  },
+  "firestore": {
+    "/tenants/{tenantSlug}": {
+      "schema": "TenantSanctuary",
+      "description": "Stores sanctuary configurations, owner UID, hashed PINs, and themes."
+    },
+    "/tenants/{tenantSlug}/recipes/{recipeId}": {
+      "schema": "Recipe",
+      "description": "Subcollection of family recipes stored under the sanctuary."
+    },
+    "/tenants/{tenantSlug}/albums/{albumId}": {
+      "schema": "SharedAlbum",
+      "description": "Subcollection of curated cloud photo albums under the sanctuary."
+    },
+    "/tenants/{tenantSlug}/scriptures/{scriptureId}": {
+      "schema": "ScriptureVerse",
+      "description": "Subcollection of grounding scripture verses under the sanctuary."
+    },
+    "/tenants/{tenantSlug}/thoughts/{thoughtId}": {
+      "schema": "ThoughtEntry",
+      "description": "Subcollection of thought journal entries under the sanctuary."
+    },
+    "/tenants/{tenantSlug}/planner/{itemId}": {
+      "schema": "PlannerItem",
+      "description": "Subcollection of daily intentions and scheduled reminders."
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile with appearance settings and sports preferences."
+    }
+  }
+}

@@ -53,6 +53,7 @@ export interface ThoughtEntry {
   tag?: string;
   photoUrl?: string; // Attached photo to personal experience
   mood?: string;
+  createdAt?: string;
 }
 
 export interface RecipeItem {

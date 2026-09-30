@@ -1,0 +1,219 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidSlug(slug) {
+      return slug is string && slug.size() > 0 && slug.size() <= 64 && slug.matches('^[a-z0-9\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isTenantOwner(tenantSlug) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/tenants/$(tenantSlug)) &&
+        get(/databases/$(database)/documents/tenants/$(tenantSlug)).data.ownerId == request.auth.uid;
+    }
+
+    // Entity Validation Helpers
+    function isValidTenant(data) {
+      return data.keys().hasAll(['slug', 'sanctuaryName', 'ownerId', 'activeTheme', 'subscriptionStatus']) &&
+        isValidSlug(data.slug) &&
+        data.sanctuaryName is string && data.sanctuaryName.size() > 0 && data.sanctuaryName.size() <= 100 &&
+        data.ownerId is string && data.ownerId.size() > 0 && data.ownerId.size() <= 128 &&
+        data.activeTheme in ['sanctuary_warm', 'sage_garden', 'lofi_dark', 'retro_y2k', 'modern_lounge', 'neutral_keepsake'] &&
+        data.subscriptionStatus in ['active', 'trial', 'past_due', 'canceled'];
+    }
+
+    function isValidRecipe(data) {
+      return data.keys().hasAll(['title', 'category', 'tenantSlug', 'authorId']) &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 120 &&
+        data.category is string && data.category.size() > 0 && data.category.size() <= 50 &&
+        isValidSlug(data.tenantSlug) &&
+        data.authorId is string && data.authorId.size() > 0 && data.authorId.size() <= 128;
+    }
+
+    function isValidAlbum(data) {
+      return data.keys().hasAll(['title', 'tenantSlug', 'cloudPlatform', 'albumUrl', 'authorId']) &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 120 &&
+        isValidSlug(data.tenantSlug) &&
+        data.cloudPlatform in ['google-photos', 'icloud', 'dropbox', 'onedrive', 'other'] &&
+        data.albumUrl is string && data.albumUrl.size() > 0 && data.albumUrl.size() <= 500 &&
+        data.authorId is string && data.authorId.size() > 0 && data.authorId.size() <= 128;
+    }
+
+    function isValidScripture(data) {
+      return data.keys().hasAll(['reference', 'text', 'tenantSlug', 'authorId']) &&
+        data.reference is string && data.reference.size() > 0 && data.reference.size() <= 100 &&
+        data.text is string && data.text.size() > 0 && data.text.size() <= 1500 &&
+        isValidSlug(data.tenantSlug) &&
+        data.authorId is string && data.authorId.size() > 0 && data.authorId.size() <= 128;
+    }
+
+    function isValidThought(data) {
+      return data.keys().hasAll(['title', 'content', 'tenantSlug', 'authorId']) &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 120 &&
+        data.content is string && data.content.size() > 0 && data.content.size() <= 4000 &&
+        isValidSlug(data.tenantSlug) &&
+        data.authorId is string && data.authorId.size() > 0 && data.authorId.size() <= 128;
+    }
+
+    function isValidPlannerItem(data) {
+      return data.keys().hasAll(['title', 'tenantSlug', 'authorId']) &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+        isValidSlug(data.tenantSlug) &&
+        data.authorId is string && data.authorId.size() > 0 && data.authorId.size() <= 128;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'name']) &&
+        data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100;
+    }
+
+    // Test collection for boot ping
+    match /test/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 1. Tenants Collection (/tenants/{tenantSlug})
+    match /tenants/{tenantSlug} {
+      allow get: if isValidSlug(tenantSlug);
+      allow list: if true;
+      allow create: if isValidSlug(tenantSlug) &&
+        isValidTenant(incoming()) &&
+        incoming().slug == tenantSlug &&
+        (isSignedIn() ? incoming().ownerId == request.auth.uid : true);
+      allow update: if isValidSlug(tenantSlug) &&
+        isValidTenant(incoming()) &&
+        (
+          (isSignedIn() && existing().ownerId == request.auth.uid && incoming().ownerId == existing().ownerId) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['pinHash', 'activeTheme', 'updatedAt'])
+        );
+      allow delete: if isValidSlug(tenantSlug) &&
+        isSignedIn() &&
+        existing().ownerId == request.auth.uid;
+
+      // 2. Subcollection: Recipes (/tenants/{tenantSlug}/recipes/{recipeId})
+      match /recipes/{recipeId} {
+        allow get, list: if isValidSlug(tenantSlug);
+        allow create: if isValidSlug(tenantSlug) &&
+          isValidId(recipeId) &&
+          isValidRecipe(incoming()) &&
+          incoming().tenantSlug == tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || incoming().authorId == request.auth.uid) : true);
+        allow update: if isValidSlug(tenantSlug) &&
+          isValidId(recipeId) &&
+          isValidRecipe(incoming()) &&
+          incoming().tenantSlug == existing().tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+        allow delete: if isValidSlug(tenantSlug) &&
+          isValidId(recipeId) &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+      }
+
+      // 3. Subcollection: Shared Albums (/tenants/{tenantSlug}/albums/{albumId})
+      match /albums/{albumId} {
+        allow get, list: if isValidSlug(tenantSlug);
+        allow create: if isValidSlug(tenantSlug) &&
+          isValidId(albumId) &&
+          isValidAlbum(incoming()) &&
+          incoming().tenantSlug == tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || incoming().authorId == request.auth.uid) : true);
+        allow update: if isValidSlug(tenantSlug) &&
+          isValidId(albumId) &&
+          isValidAlbum(incoming()) &&
+          incoming().tenantSlug == existing().tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+        allow delete: if isValidSlug(tenantSlug) &&
+          isValidId(albumId) &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+      }
+
+      // 4. Subcollection: Scriptures (/tenants/{tenantSlug}/scriptures/{scriptureId})
+      match /scriptures/{scriptureId} {
+        allow get, list: if isValidSlug(tenantSlug);
+        allow create: if isValidSlug(tenantSlug) &&
+          isValidId(scriptureId) &&
+          isValidScripture(incoming()) &&
+          incoming().tenantSlug == tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || incoming().authorId == request.auth.uid) : true);
+        allow update: if isValidSlug(tenantSlug) &&
+          isValidId(scriptureId) &&
+          isValidScripture(incoming()) &&
+          incoming().tenantSlug == existing().tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+        allow delete: if isValidSlug(tenantSlug) &&
+          isValidId(scriptureId) &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+      }
+
+      // 5. Subcollection: Thoughts Journal (/tenants/{tenantSlug}/thoughts/{thoughtId})
+      match /thoughts/{thoughtId} {
+        allow get, list: if isValidSlug(tenantSlug);
+        allow create: if isValidSlug(tenantSlug) &&
+          isValidId(thoughtId) &&
+          isValidThought(incoming()) &&
+          incoming().tenantSlug == tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || incoming().authorId == request.auth.uid) : true);
+        allow update: if isValidSlug(tenantSlug) &&
+          isValidId(thoughtId) &&
+          isValidThought(incoming()) &&
+          incoming().tenantSlug == existing().tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+        allow delete: if isValidSlug(tenantSlug) &&
+          isValidId(thoughtId) &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+      }
+
+      // 6. Subcollection: Planner Items (/tenants/{tenantSlug}/planner/{itemId})
+      match /planner/{itemId} {
+        allow get, list: if isValidSlug(tenantSlug);
+        allow create: if isValidSlug(tenantSlug) &&
+          isValidId(itemId) &&
+          isValidPlannerItem(incoming()) &&
+          incoming().tenantSlug == tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || incoming().authorId == request.auth.uid) : true);
+        allow update: if isValidSlug(tenantSlug) &&
+          isValidId(itemId) &&
+          isValidPlannerItem(incoming()) &&
+          incoming().tenantSlug == existing().tenantSlug &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+        allow delete: if isValidSlug(tenantSlug) &&
+          isValidId(itemId) &&
+          (isSignedIn() ? (isTenantOwner(tenantSlug) || existing().authorId == request.auth.uid) : true);
+      }
+    }
+
+    // 7. Users Collection (/users/{userId})
+    match /users/{userId} {
+      allow get: if isValidId(userId);
+      allow create, update: if isValidId(userId) &&
+        isValidUserProfile(incoming()) &&
+        (isSignedIn() ? request.auth.uid == userId : true);
+      allow delete: if isValidId(userId) &&
+        isSignedIn() &&
+        request.auth.uid == userId;
+    }
+  }
+}

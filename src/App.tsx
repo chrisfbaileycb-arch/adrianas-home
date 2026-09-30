@@ -19,6 +19,38 @@ import {
 import { storage } from './utils/storage';
 import { ambientSound } from './utils/audio';
 import { tenantApi, DEFAULT_TENANT } from './utils/tenantApi';
+import { testFirestoreConnection } from './firebase';
+import {
+  signInWithGoogle,
+  signOutUser,
+  subscribeToAuth,
+} from './services/firebaseAuth';
+import { User as FirebaseUser } from 'firebase/auth';
+import {
+  subscribeToTenant,
+  saveTenantToFirestore,
+  updateTenantPinInFirestore,
+  updateTenantThemeInFirestore,
+} from './services/firebaseTenants';
+import {
+  subscribeToRecipes,
+  addRecipeToFirestore,
+  deleteRecipeFromFirestore,
+  toggleFavoriteRecipeInFirestore,
+  subscribeToAlbums,
+  addAlbumToFirestore,
+  toggleFavoriteAlbumInFirestore,
+  subscribeToScriptures,
+  addScriptureToFirestore,
+  deleteScriptureFromFirestore,
+  subscribeToThoughts,
+  addThoughtToFirestore,
+  deleteThoughtFromFirestore,
+  subscribeToPlanner,
+  addPlannerItemToFirestore,
+  togglePlannerItemInFirestore,
+  deletePlannerItemFromFirestore,
+} from './services/firebaseSync';
 import { Navbar } from './components/Navbar';
 import { TenantBar } from './components/TenantBar';
 import { SubscriptionModal } from './components/SubscriptionModal';
@@ -52,6 +84,28 @@ export default function App() {
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
   const [isFlywheelOpen, setIsFlywheelOpen] = useState(false);
 
+  // Firebase Auth & Cloud Sync States
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isCloudSynced, setIsCloudSynced] = useState<boolean>(true);
+
+  // 1. Initial Firestore connection test & Auth listener
+  useEffect(() => {
+    testFirestoreConnection().then((connected) => {
+      setIsCloudSynced(connected);
+    });
+
+    const unsubscribeAuth = subscribeToAuth((user) => {
+      setCurrentUser(user);
+      if (user && currentTenant.ownerId === user.uid) {
+        setCurrentRole('owner');
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+    };
+  }, [currentTenant.ownerId]);
+
   // Load tenant details from API or local fallback
   useEffect(() => {
     let isMounted = true;
@@ -80,6 +134,65 @@ export default function App() {
     };
   }, [currentSlug]);
 
+  // 2. Real-time Firestore synchronizer for current sanctuary tenant & collections
+  useEffect(() => {
+    if (!currentSlug) return;
+    const clean = currentSlug.toLowerCase().replace(/^@/, '');
+
+    const unsubs: (() => void)[] = [];
+
+    // Tenant real-time
+    unsubs.push(
+      subscribeToTenant(clean, (cloudTenant) => {
+        setCurrentTenant(cloudTenant);
+      })
+    );
+
+    // Recipes real-time
+    unsubs.push(
+      subscribeToRecipes(clean, (cloudRecipes) => {
+        setRecipes(cloudRecipes);
+        storage.saveRecipes(cloudRecipes);
+      })
+    );
+
+    // Albums real-time
+    unsubs.push(
+      subscribeToAlbums(clean, (cloudAlbums) => {
+        setSharedAlbums(cloudAlbums);
+        storage.saveSharedAlbums(cloudAlbums);
+      })
+    );
+
+    // Scriptures real-time
+    unsubs.push(
+      subscribeToScriptures(clean, (cloudScriptures) => {
+        setScriptures(cloudScriptures);
+        storage.saveScriptures(cloudScriptures);
+      })
+    );
+
+    // Thoughts real-time
+    unsubs.push(
+      subscribeToThoughts(clean, (cloudThoughts) => {
+        setThoughts(cloudThoughts);
+        storage.saveThoughts(cloudThoughts);
+      })
+    );
+
+    // Planner real-time
+    unsubs.push(
+      subscribeToPlanner(clean, (cloudPlanner) => {
+        setPlans(cloudPlanner);
+        storage.savePlans(cloudPlanner);
+      })
+    );
+
+    return () => {
+      unsubs.forEach((u) => u());
+    };
+  }, [currentSlug]);
+
   const handleSwitchTenant = (slug: string) => {
     const clean = slug.toLowerCase().replace(/^@/, '');
     setCurrentSlug(clean);
@@ -94,6 +207,34 @@ export default function App() {
 
   const handleUpdatePin = async (newPin: string) => {
     await tenantApi.updateTenant(currentSlug, { familyPin: newPin });
+    try {
+      await updateTenantPinInFirestore(currentSlug, newPin);
+    } catch (e) {
+      console.warn('Firestore PIN sync fallback:', e);
+    }
+  };
+
+  const handleSignInGoogle = async () => {
+    try {
+      const user = await signInWithGoogle();
+      if (user) {
+        setCurrentUser(user);
+        if (currentTenant.ownerId === user.uid) {
+          setCurrentRole('owner');
+        }
+      }
+    } catch (e) {
+      console.warn('Google sign in warning:', e);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOutUser();
+      setCurrentUser(null);
+    } catch (e) {
+      console.warn('Sign out warning:', e);
+    }
   };
 
   // Guest Front Porch Lock State (persisted per session)
@@ -252,15 +393,29 @@ export default function App() {
       createdAt: new Date().toISOString(),
     };
     setPlans((prev) => [item, ...prev]);
+    storage.savePlans([item, ...plans]);
+    addPlannerItemToFirestore(currentSlug, newPlan).catch((err) =>
+      console.warn('Firestore plan sync:', err)
+    );
   };
 
   const handleTogglePlan = (id: string) => {
+    let nextCompleted = false;
     setPlans((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item))
+      prev.map((item) => {
+        if (item.id === id) {
+          nextCompleted = !item.completed;
+          return { ...item, completed: nextCompleted };
+        }
+        return item;
+      })
     );
     if (activeAlert && activeAlert.id === id) {
       setActiveAlert(null);
     }
+    togglePlannerItemInFirestore(currentSlug, id, nextCompleted).catch((err) =>
+      console.warn('Firestore toggle plan:', err)
+    );
   };
 
   const handleUpdatePlan = (id: string, updates: Partial<PlanItem>) => {
@@ -274,6 +429,9 @@ export default function App() {
     if (activeAlert && activeAlert.id === id) {
       setActiveAlert(null);
     }
+    deletePlannerItemFromFirestore(currentSlug, id).catch((err) =>
+      console.warn('Firestore delete plan:', err)
+    );
   };
 
   const handleClearCompletedPlans = () => {
@@ -313,13 +471,25 @@ export default function App() {
       id: `album-${Date.now()}`,
     };
     setSharedAlbums((prev) => [item, ...prev]);
+    storage.saveSharedAlbums([item, ...sharedAlbums]);
+    addAlbumToFirestore(currentSlug, newAlbum).catch((err) =>
+      console.warn('Firestore album sync:', err)
+    );
   };
 
   const handleToggleFavoriteAlbum = (id: string) => {
+    let nextFav = false;
     setSharedAlbums((prev) =>
-      prev.map((album) =>
-        album.id === id ? { ...album, isFavorite: !album.isFavorite } : album
-      )
+      prev.map((album) => {
+        if (album.id === id) {
+          nextFav = !album.isFavorite;
+          return { ...album, isFavorite: nextFav };
+        }
+        return album;
+      })
+    );
+    toggleFavoriteAlbumInFirestore(currentSlug, id, nextFav).catch((err) =>
+      console.warn('Firestore fav album:', err)
     );
   };
 
@@ -351,6 +521,10 @@ export default function App() {
       id: `v-${Date.now()}`,
     };
     setScriptures((prev) => [item, ...prev]);
+    storage.saveScriptures([item, ...scriptures]);
+    addScriptureToFirestore(currentSlug, newVerse).catch((err) =>
+      console.warn('Firestore verse sync:', err)
+    );
   };
 
   // Thoughts handlers
@@ -360,10 +534,17 @@ export default function App() {
       id: `th-${Date.now()}`,
     };
     setThoughts((prev) => [entry, ...prev]);
+    storage.saveThoughts([entry, ...thoughts]);
+    addThoughtToFirestore(currentSlug, newThought).catch((err) =>
+      console.warn('Firestore thought sync:', err)
+    );
   };
 
   const handleDeleteThought = (id: string) => {
     setThoughts((prev) => prev.filter((t) => t.id !== id));
+    deleteThoughtFromFirestore(currentSlug, id).catch((err) =>
+      console.warn('Firestore delete thought:', err)
+    );
   };
 
   // Recipe handlers
@@ -373,15 +554,32 @@ export default function App() {
       id: `rec-${Date.now()}`,
     };
     setRecipes((prev) => [recipe, ...prev]);
+    storage.saveRecipes([recipe, ...recipes]);
+    addRecipeToFirestore(currentSlug, newRecipe).catch((err) =>
+      console.warn('Firestore recipe sync:', err)
+    );
   };
 
   const handleDeleteRecipe = (id: string) => {
     setRecipes((prev) => prev.filter((r) => r.id !== id));
+    deleteRecipeFromFirestore(currentSlug, id).catch((err) =>
+      console.warn('Firestore delete recipe:', err)
+    );
   };
 
   const handleToggleFavoriteRecipe = (id: string) => {
+    let nextFav = false;
     setRecipes((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, isFavorite: !r.isFavorite } : r))
+      prev.map((r) => {
+        if (r.id === id) {
+          nextFav = !r.isFavorite;
+          return { ...r, isFavorite: nextFav };
+        }
+        return r;
+      })
+    );
+    toggleFavoriteRecipeInFirestore(currentSlug, id, nextFav).catch((err) =>
+      console.warn('Firestore fav recipe:', err)
     );
   };
 
@@ -502,6 +700,10 @@ export default function App() {
         userName={currentTenant.sanctuaryName || userProfile.name}
         currentRole={currentRole}
         modulesEnabled={currentTenant.modulesEnabled}
+        currentUser={currentUser}
+        onSignInGoogle={handleSignInGoogle}
+        onSignOut={handleSignOut}
+        isCloudSynced={isCloudSynced}
       />
 
       {/* Main Content Area */}
@@ -586,7 +788,10 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer onOpenBackup={() => setIsBackupOpen(true)} />
+      <Footer
+        onOpenBackup={() => setIsBackupOpen(true)}
+        onOpenFlywheel={() => setIsFlywheelOpen(true)}
+      />
 
       {/* Privacy & Safe Backup Modal */}
       <BackupModal
