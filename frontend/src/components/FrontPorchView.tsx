@@ -39,7 +39,7 @@ export const FrontPorchView: React.FC<FrontPorchViewProps> = ({
 
       setTimeout(() => {
         onUnlock();
-      }, 500);
+      }, 450);
     } else {
       setIsShaking(true);
       setErrorMsg('Incorrect PIN. Please try again or tap the guest hint below.');

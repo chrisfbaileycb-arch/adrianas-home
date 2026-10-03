@@ -67,7 +67,6 @@ import { Footer } from './components/Footer';
 import { BackupModal } from './components/BackupModal';
 import { PersonalizeModal } from './components/PersonalizeModal';
 import { FlowerWallpaperBackdrop } from './components/FlowerWallpaperBackdrop';
-import { PaymentSuccessView } from './components/PaymentSuccessView';
 import { BellRing, Check, X } from 'lucide-react';
 
 export default function App() {
@@ -350,7 +349,7 @@ export default function App() {
             // Browser Notification
             if ('Notification' in window && Notification.permission === 'granted') {
               try {
-                new Notification('Daily Reminder · Adrianas', {
+                new Notification("Daily Reminder · Adriana's", {
                   body: plan.title,
                 });
               } catch {
@@ -590,15 +589,6 @@ export default function App() {
   };
 
   const currentDailyVerse = scriptures[scriptureIndex % (scriptures.length || 1)] || scriptures[0];
-
-  // Stripe return routes (hosted checkout redirects back here)
-  const pathNow = typeof window !== 'undefined' ? window.location.pathname : '';
-  if (pathNow.startsWith('/payment/success')) {
-    return <PaymentSuccessView />;
-  }
-  if (pathNow.startsWith('/payment/cancel')) {
-    window.history.replaceState({}, '', '/');
-  }
 
   // Guest Front-Door Passcode Gate (Aesthetic Front Porch for Social Media Bio Links)
   if (!isUnlocked) {

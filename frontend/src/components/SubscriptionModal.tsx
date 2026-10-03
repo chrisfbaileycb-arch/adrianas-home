@@ -265,6 +265,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 type="text"
                 value={sanctuaryName}
                 onChange={(e) => setSanctuaryName(e.target.value)}
+                data-testid="sanctuary-name-input"
                 placeholder="e.g. The Miller Family Hearth, Sarah's Sanctuary..."
                 className="w-full px-3.5 py-2.5 text-xs bg-[#FAF7F2] border border-[#E0D5C7] rounded-xl text-[#2D231C] focus:outline-none focus:ring-2 focus:ring-[#B84A2A]"
                 required
@@ -282,6 +283,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   type="text"
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
+                  data-testid="slug-input"
                   placeholder="miller"
                   className="w-full bg-transparent text-[#2D231C] font-mono font-semibold focus:outline-none pl-0.5"
                   required
@@ -301,6 +303,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 type="email"
                 value={ownerEmail}
                 onChange={(e) => setOwnerEmail(e.target.value)}
+                data-testid="owner-email-input"
                 placeholder="you@gmail.com"
                 className="w-full px-3.5 py-2.5 text-xs bg-[#FAF7F2] border border-[#E0D5C7] rounded-xl text-[#2D231C] focus:outline-none focus:ring-2 focus:ring-[#B84A2A]"
                 required
@@ -319,6 +322,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   maxLength={4}
                   value={familyPin}
                   onChange={(e) => setFamilyPin(e.target.value.replace(/\D/g, ''))}
+                  data-testid="family-pin-input"
                   placeholder="1984"
                   className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#FAF7F2] border border-[#E0D5C7] rounded-xl text-[#2D231C] font-mono tracking-widest text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#B84A2A]"
                   required
@@ -340,6 +344,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   setErrorMsg(null);
                   setStep(2);
                 }}
+                data-testid="continue-to-theme-btn"
                 className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-semibold text-white bg-[#B84A2A] rounded-xl hover:bg-[#A33F23] transition-colors shadow-xs"
               >
                 <span>Continue to Theme & Modules</span>
@@ -449,6 +454,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 type="button"
                 onClick={handleLaunchCheckoutAndProvision}
                 disabled={isProcessing}
+                data-testid="subscribe-launch-btn"
                 className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-[#059669] hover:bg-[#047857] rounded-xl transition-all shadow-md active:scale-98 disabled:opacity-50"
               >
                 <CreditCard className="w-4 h-4" />

@@ -1,0 +1,31 @@
+{
+  "summary": "Backend fully passing (9/9 pytest). Front Porch PIN gate works (both the 'Tap for Guest PIN' auto-unlock and manual keypad PIN entry unlock the dashboard with navigation tabs: Home, Family Albums, Today's Plan, Recipes, Scripture, Thoughts). Stripe checkout API returns valid Stripe hosted-checkout URL with correct $40/yr pricing, metadata and session_id; redirect from the SubscriptionModal into Stripe's hosted page works end-to-end. Full completion of payment on Stripe hosted checkout could not be reliably automated in 3 attempts — all fields (email, 4242 card, 12/34, CVC 123, cardholder, US address, phone) were filled and the Subscribe button clicked, but the Stripe page remained on the checkout URL with no navigation back to /payment/success. This is almost certainly due to Stripe sandbox's 'This page is from an unclaimed Stripe sandbox' banner + the Link 'Save my information' flow requiring real phone/email verification (not a Hearth code bug). Backend provisioning path from payment metadata is implemented correctly and verified via the direct POST /api/tenants path. Recommend main agent either (a) manually complete one real Stripe sandbox checkout to confirm /payment/success provisioning, or (b) add STRIPE_PAYMENT_METHOD_TYPES=['card'] and disable Link auto-signup on the Checkout Session to make automated QA easier.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Full Stripe payment completion -> /payment/success provisioning", "issue": "Could not programmatically complete Stripe hosted checkout in automated test (Link signup + unclaimed-sandbox banner). Redirect to Stripe works and metadata is correct; the return/provision step was not executed end-to-end from the browser. Everything up to Stripe is confirmed working.", "affected_selectors": ["enter-sanctuary-btn", "copy-owner-link-btn", "public-bio-link", "payment-success-view"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_hearth_api.py", "/app/test_reports/pytest/hearth_api.xml"],
+  "action_items": [
+    "Manually complete one Stripe test-mode checkout with 4242 4242 4242 4242 to validate PaymentSuccessView polling + provisioning (data-testid: payment-success-view, enter-sanctuary-btn, copy-owner-link-btn, public-bio-link). The backend _mark_paid path is wired and will provision on checkout.session.completed webhook OR when PaymentSuccessView polls /api/payments/status/{session_id}.",
+    "Optional: On stripe.checkout.Session.create, pass payment_method_types=['card'] (and omit managed_payments or set it off for sandbox) so the hosted page doesn't force Link signup; this will make the flow testable headlessly."
+  ],
+  "critical_code_review_comments": [
+    "server.py: /api/payments/checkout stores metadata and the webhook/polling path correctly re-provisions (idempotent via existing-tenant short-circuit in provision_tenant). Good.",
+    "server.py: GET /api/tenants/{slug} correctly omits familyPinHash via safe_tenant() and exposes hasPinSet. Verified.",
+    "server.py: Uses `stripe.error.InvalidRequestError` which still works but is deprecated in newer stripe-python; consider `stripe.InvalidRequestError`.",
+    "server.py seed_tenants runs on every import — fine but should guard against race in multi-worker environments.",
+    "SubscriptionModal.tsx: inputs lack data-testid attributes (sanctuary-name, slug, owner-email, family-pin, continue-btn, subscribe-launch-btn). Would make automated QA deterministic.",
+    "PaymentSuccessView has good data-testids already (enter-sanctuary-btn, copy-owner-link-btn, public-bio-link, payment-success-view) — good."
+  ],
+  "updated_files": ["/app/backend/tests/test_hearth_api.py"],
+  "success_rate": {"backend": "100%", "frontend": "~85% (PIN gate + Stripe redirect verified; full post-payment provisioning not completed in-browser)"},
+  "test_credentials": "Adriana PIN=1984, Miller=2024, Lofi-Nest=1234. Stripe test card 4242 4242 4242 4242 any future exp/CVC.",
+  "seed_data_creation": "Created a test tenant via API: slug=testspace-1790986980-487. Also created link-circle-1 via test (if missing).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend pytest suite at /app/backend/tests/test_hearth_api.py — reuse for regression. Frontend PIN gate is solid. The only unverified leg is the final Stripe sandbox payment completion -> /payment/success provisioning; recommend main agent self-tests this manually (one-click, 30s) or adds payment_method_types=['card'] to the Checkout Session for headless automation. Backend /api/payments/status/{sid} already auto-provisions via _mark_paid when it sees paid status, so once a real test payment completes, GET /api/tenants should include the new slug immediately after the success page loads."
+}

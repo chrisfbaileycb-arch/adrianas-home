@@ -82,7 +82,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-[#9A897B] font-medium">
           <span>{formattedDate}</span>
           <span aria-hidden="true">·</span>
-          <span>Adrianas</span>
+          <span>Adriana's</span>
         </div>
         <h1 className="font-serif text-3xl sm:text-5xl font-medium tracking-tight text-[#2D231C] text-balance">
           Your Daily Sanctuary

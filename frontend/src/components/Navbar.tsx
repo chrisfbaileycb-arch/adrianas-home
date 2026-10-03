@@ -98,7 +98,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="text-left font-serif text-2xl font-semibold tracking-tight text-[#2D231C] hover:text-[#B84A2A] transition-colors flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B84A2A] rounded-sm"
           >
             <span className="text-[#C05621] text-xl" aria-hidden="true">❦</span>
-            <span>Adrianas</span>
+            <span>Adriana's</span>
           </button>
         </div>
 

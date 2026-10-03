@@ -184,6 +184,16 @@ def verify_pin(slug: str, body: PinBody):
     raise HTTPException(401, "Incorrect 4-digit PIN")
 
 
+@api.get("/tenants/{slug}/verify-pin")
+def verify_pin_get(slug: str, pin: str):
+    t = tenants_col.find_one({"slug": clean_slug(slug)})
+    if not t:
+        raise HTTPException(404, "Sanctuary not found")
+    if check_pin(pin, t.get("familyPinHash", "")):
+        return {"success": True, "message": "Welcome to the sanctuary"}
+    raise HTTPException(401, "Incorrect 4-digit PIN")
+
+
 class CreateTenantBody(BaseModel):
     slug: str
     sanctuaryName: str

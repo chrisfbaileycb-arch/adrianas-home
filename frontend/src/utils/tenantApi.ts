@@ -1,5 +1,7 @@
 import { TenantSanctuary } from '../types';
 
+// Use the platform-provided external backend URL (proven reliable for writes
+// through the ingress). Falls back to relative paths if unset.
 const API = (import.meta.env.REACT_APP_BACKEND_URL as string) || '';
 
 export const DEFAULT_TENANT: TenantSanctuary = {
@@ -110,11 +112,9 @@ export const tenantApi = {
 
   async verifyPin(slug: string, pin: string): Promise<boolean> {
     try {
-      const res = await fetch(`${API}/api/tenants/${slug}/verify-pin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin }),
-      });
+      const res = await fetch(
+        `${API}/api/tenants/${slug}/verify-pin?pin=${encodeURIComponent(pin)}&t=${Date.now()}`
+      );
       if (res.ok) {
         const data = await res.json();
         return data.success === true;
@@ -208,7 +208,7 @@ export const tenantApi = {
   async getPaymentStatus(
     sessionId: string
   ): Promise<{ status: string; payment_status: string; slug: string }> {
-    const res = await fetch(`${API}/api/payments/status/${sessionId}`);
+    const res = await fetch(`${API}/api/payments/status/${sessionId}?t=${Date.now()}`);
     if (!res.ok) throw new Error('Could not fetch payment status');
     return res.json();
   },

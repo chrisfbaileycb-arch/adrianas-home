@@ -12,12 +12,8 @@ export const PaymentSuccessView: React.FC = () => {
   const [sanctuaryName, setSanctuaryName] = useState('');
   const [adminUrl, setAdminUrl] = useState('');
   const [copied, setCopied] = useState(false);
-  const ran = useRef(false);
 
   useEffect(() => {
-    if (ran.current) return;
-    ran.current = true;
-
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id');
     if (!sessionId) {
@@ -83,7 +79,9 @@ export const PaymentSuccessView: React.FC = () => {
           setMessage('This payment did not complete. Please try again.');
           return;
         }
-      } catch {}
+      } catch (err) {
+        console.error('[Hearth] poll error:', err);
+      }
       if (attempts >= 25) {
         setPhase('error');
         setMessage('Still waiting on Stripe. Your space will appear once payment confirms — refresh shortly.');
