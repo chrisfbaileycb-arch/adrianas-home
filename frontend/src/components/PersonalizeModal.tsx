@@ -9,6 +9,7 @@ import {
   DailyLayoutChoice,
 } from '../types';
 import { PREDEFINED_TEAMS, PredefinedTeam } from '../data/sportsTeamsData';
+import { MUSIC_LIBRARY, LibraryTrack } from '../data/musicLibrary';
 import { TeamLogo } from './TeamLogo';
 import {
   Sparkles,
@@ -26,6 +27,9 @@ import {
   Search,
   Upload,
   Image as ImageIcon,
+  Play,
+  Pause,
+  Library,
 } from 'lucide-react';
 
 interface PersonalizeModalProps {
@@ -63,6 +67,36 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
   const [wallpaperTheme, setWallpaperTheme] = useState<WallpaperBackground>(profile.wallpaperTheme || 'linen');
   const [dailyLayout, setDailyLayout] = useState<DailyLayoutChoice>(profile.dailyLayout || 'standard');
   const [reminderSoundEnabled, setReminderSoundEnabled] = useState(profile.reminderSoundEnabled ?? true);
+  const [accentColor, setAccentColor] = useState(profile.accentColor || '#B84A2A');
+
+  // Music library inline preview
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const togglePreview = (track: LibraryTrack) => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.onended = () => setPlayingId(null);
+    }
+    const audio = audioRef.current;
+    if (playingId === track.id) {
+      audio.pause();
+      setPlayingId(null);
+      return;
+    }
+    audio.src = track.url;
+    audio.play().then(() => setPlayingId(track.id)).catch(() => setPlayingId(null));
+  };
+
+  const addLibraryTrack = (track: LibraryTrack) => {
+    if (favoriteMusic.some((m) => m.title.toLowerCase() === track.title.toLowerCase())) return;
+    setFavoriteMusic([
+      ...favoriteMusic,
+      { id: `lib-${track.id}-${Date.now()}`, title: track.title, artist: track.artist, url: track.url, mood: track.mood, source: 'library' },
+    ]);
+  };
+
+  const accentPresets = ['#B84A2A', '#7C3AED', '#0E7490', '#15803D', '#BE123C', '#B45309', '#1E3A8A', '#9333EA'];
 
   // Sports team search & filter
   const [teamSearchQuery, setTeamSearchQuery] = useState('');
@@ -176,6 +210,7 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
       wallpaperTheme,
       dailyLayout,
       reminderSoundEnabled,
+      accentColor,
     });
     onClose();
   };
@@ -684,6 +719,69 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
                 </a>
               </div>
 
+              {/* Hearth Royalty-Free Music Library */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-1.5">
+                  <Library className="w-4 h-4" style={{ color: 'var(--accent, #B84A2A)' }} />
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#736558]">
+                    Hearth Music Library · Royalty-Free
+                  </h4>
+                </div>
+                <p className="text-[11px] text-[#8F7F72] -mt-1">
+                  Preview and add free tracks to your space. Swap in your own original songs anytime.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {MUSIC_LIBRARY.map((track) => {
+                    const isPlaying = playingId === track.id;
+                    const isAdded = favoriteMusic.some(
+                      (m) => m.title.toLowerCase() === track.title.toLowerCase()
+                    );
+                    return (
+                      <div
+                        key={track.id}
+                        className="flex items-center gap-3 p-3 bg-white border border-[#E8DFD3] rounded-2xl shadow-2xs"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => togglePreview(track)}
+                          data-testid={`library-play-${track.id}`}
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90"
+                          style={{ backgroundColor: 'var(--accent, #B84A2A)' }}
+                          aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
+                        >
+                          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-[#2D231C] truncate">{track.title}</p>
+                          <p className="text-[10px] text-[#8F7F72] truncate">{track.mood} · {track.artist}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => addLibraryTrack(track)}
+                          disabled={isAdded}
+                          data-testid={`library-add-${track.id}`}
+                          className={`px-2.5 py-1.5 text-[11px] font-semibold rounded-lg shrink-0 flex items-center gap-1 transition-colors ${
+                            isAdded
+                              ? 'bg-[#F0E9DF] text-[#9E9084] cursor-default'
+                              : 'text-white hover:opacity-90'
+                          }`}
+                          style={isAdded ? {} : { backgroundColor: 'var(--accent, #B84A2A)' }}
+                        >
+                          {isAdded ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                          <span>{isAdded ? 'Added' : 'Add'}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-[#E8DFD3] pt-5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#736558] mb-2">
+                  Or Link Your Own Track
+                </p>
+              </div>
+
               {/* Add Music Form */}
               <form onSubmit={handleAddMusic} className="p-4 bg-[#FAF7F2] border border-[#E8DFD3] rounded-2xl space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -827,8 +925,54 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
           {/* TAB 5: Theme & Font Layout */}
           {activeTab === 'appearance' && (
             <div className="space-y-6">
-              {/* Wallpaper Background Palette */}
+              {/* Accent Color */}
               <div className="space-y-3">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#736558]">
+                  Accent Color
+                </label>
+                <p className="text-[11px] text-[#8F7F72] -mt-1.5">
+                  Your signature color — used across buttons, highlights and your onboarding.
+                </p>
+                <div className="flex items-center flex-wrap gap-2.5">
+                  {accentPresets.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setAccentColor(c)}
+                      data-testid={`accent-${c}`}
+                      className={`w-9 h-9 rounded-full transition-transform hover:scale-110 ${
+                        accentColor.toLowerCase() === c.toLowerCase()
+                          ? 'ring-2 ring-offset-2 ring-[#2D231C]'
+                          : 'ring-1 ring-black/10'
+                      }`}
+                      style={{ backgroundColor: c }}
+                      aria-label={`Accent ${c}`}
+                    />
+                  ))}
+                  <label
+                    className="w-9 h-9 rounded-full border border-dashed border-[#C4B29E] flex items-center justify-center cursor-pointer overflow-hidden relative"
+                    title="Custom color"
+                  >
+                    <Palette className="w-4 h-4 text-[#8F7F72]" />
+                    <input
+                      type="color"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      data-testid="accent-custom"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </label>
+                  <span
+                    className="ml-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-white"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    Preview
+                  </span>
+                </div>
+              </div>
+
+              {/* Wallpaper Background Palette */}
+              <div className="space-y-3 pt-3 border-t border-[#E8DFD3]">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#736558]">
                   Wallpaper Canvas Tint
                 </label>

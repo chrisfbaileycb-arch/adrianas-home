@@ -66,6 +66,7 @@ import { RecipesView } from './components/RecipesView';
 import { Footer } from './components/Footer';
 import { BackupModal } from './components/BackupModal';
 import { PersonalizeModal } from './components/PersonalizeModal';
+import { OwnerOnboarding } from './components/OwnerOnboarding';
 import { FlowerWallpaperBackdrop } from './components/FlowerWallpaperBackdrop';
 import { BellRing, Check, X } from 'lucide-react';
 
@@ -76,6 +77,7 @@ export default function App() {
   const [personalizeTab, setPersonalizeTab] = useState<
     'general' | 'teams' | 'music' | 'flower' | 'appearance'
   >('general');
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Multi-Tenant & Commercial Subscription state
   const [currentSlug, setCurrentSlug] = useState<string>(() => tenantApi.getSlugFromUrl());
@@ -294,7 +296,25 @@ export default function App() {
   // Sync typography & theme classes directly to the body
   useEffect(() => {
     document.body.className = `antialiased font-choice-${userProfile.fontLayout} theme-${userProfile.wallpaperTheme}`;
-  }, [userProfile.fontLayout, userProfile.wallpaperTheme]);
+    document.documentElement.style.setProperty('--accent', userProfile.accentColor || '#B84A2A');
+  }, [userProfile.fontLayout, userProfile.wallpaperTheme, userProfile.accentColor]);
+
+  // Show the guided owner onboarding on first visit to a space
+  useEffect(() => {
+    if (isUnlocked && currentRole === 'owner') {
+      const flag = localStorage.getItem(`hearth_onboard_done_${currentSlug}`);
+      setShowOnboarding(flag !== 'true');
+    } else {
+      setShowOnboarding(false);
+    }
+  }, [isUnlocked, currentRole, currentSlug]);
+
+  const finishOnboarding = () => {
+    try {
+      localStorage.setItem(`hearth_onboard_done_${currentSlug}`, 'true');
+    } catch {}
+    setShowOnboarding(false);
+  };
 
   // Sync to localStorage
   useEffect(() => {
@@ -826,6 +846,21 @@ export default function App() {
         onClose={() => setIsFlywheelOpen(false)}
         tenantSlug={currentTenant.slug}
       />
+
+      {/* Guided first-run onboarding for space owners */}
+      {showOnboarding && !isPersonalizeOpen && (
+        <OwnerOnboarding
+          slug={currentSlug}
+          sanctuaryName={currentTenant.sanctuaryName || userProfile.name}
+          accent={userProfile.accentColor || '#B84A2A'}
+          bioLink={`${window.location.origin}/@${currentSlug}`}
+          onOpenPersonalize={(tab) => {
+            setPersonalizeTab(tab);
+            setIsPersonalizeOpen(true);
+          }}
+          onFinish={finishOnboarding}
+        />
+      )}
     </div>
   );
 }

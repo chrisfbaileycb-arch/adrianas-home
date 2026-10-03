@@ -87,6 +87,7 @@ export interface FavoriteTrack {
   artist: string;
   url?: string;
   mood?: string;
+  source?: 'library' | 'personal';
 }
 
 export type FlowerWallpaper =
@@ -123,6 +124,7 @@ export interface UserProfile {
   wallpaperTheme: WallpaperBackground;
   dailyLayout: DailyLayoutChoice;
   reminderSoundEnabled: boolean;
+  accentColor?: string;
 }
 
 export type ActiveTab = 'home' | 'plan' | 'gallery' | 'editor' | 'scripture' | 'thoughts' | 'recipes';

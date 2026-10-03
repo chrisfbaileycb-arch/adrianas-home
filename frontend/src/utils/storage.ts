@@ -37,6 +37,7 @@ export const storage = {
       wallpaperTheme: 'linen',
       dailyLayout: 'standard',
       reminderSoundEnabled: true,
+      accentColor: '#B84A2A',
     };
     try {
       const data = localStorage.getItem(KEYS.PROFILE);
