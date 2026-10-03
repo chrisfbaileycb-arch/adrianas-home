@@ -15,20 +15,20 @@ from pymongo import MongoClient
 load_dotenv()
 
 # ----------------- DB ----------------- #
-mongo = MongoClient(os.environ["MONGO_URL"])
+mongo = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))
 db = mongo[os.environ.get("DB_NAME", "hearth")]
 tenants_col = db["tenants"]
 payments_col = db["payment_transactions"]
-tenants_col.create_index("slug", unique=True)
+try:
+    tenants_col.create_index("slug", unique=True)
+except Exception:
+    pass
 
 # ----------------- Stripe ----------------- #
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY") or "sk_test_emergent"
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
-# Hearth is a digital subscription (SaaS). In an SMP-supported country Stripe
-# can manage tax end-to-end, so we default to "full" and fall back gracefully.
 TAX_MODE = "full"
-
 LOOKUP_KEYS = {"monthly": "hearth_monthly", "yearly": "hearth_yearly"}
 
 # ----------------- Helpers ----------------- #
@@ -119,9 +119,12 @@ def seed_tenants():
          "activeTheme": "lofi_dark", "modulesEnabled": ["music", "thoughts", "albums"],
          "outboundLinks": {}, "ownerEmail": "nest@lofi.dev", "planType": "yearly"},
     ]
-    for s in seeds:
-        if not tenants_col.find_one({"slug": s["slug"]}):
-            provision_tenant(s)
+    try:
+        for s in seeds:
+            if not tenants_col.find_one({"slug": s["slug"]}):
+                provision_tenant(s)
+    except Exception:
+        pass
 
 
 seed_tenants()
@@ -320,7 +323,6 @@ def _mark_paid(session_obj):
             "updated_at": now_iso(),
         }},
     )
-    # Provision the sanctuary from the stored metadata (idempotent).
     rec = payments_col.find_one({"session_id": session_obj["id"]})
     meta = (rec or {}).get("metadata", {})
     if meta.get("slug"):

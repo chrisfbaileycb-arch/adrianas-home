@@ -32,6 +32,7 @@ import {
   Images,
 } from 'lucide-react';
 import { TeamLogo } from './TeamLogo';
+import { DailyScripture } from './DailyScripture';
 
 interface HomeViewProps {
   setActiveTab: (tab: ActiveTab) => void;
@@ -299,51 +300,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </section>
       )}
 
-      {/* Featured Steadying Scripture Card */}
-      <section className="bg-white border border-[#EADBCC] rounded-2xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#C05621]" />
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-3xl">
-            <div className="flex items-center gap-2 text-xs text-[#968474]">
-              <span className="font-medium text-[#B84A2A]">Scripture for Today</span>
-              <span aria-hidden="true">·</span>
-              <span>{dailyVerse.category}</span>
-            </div>
-            <blockquote className="font-serif text-xl sm:text-2xl text-[#2B211A] leading-snug italic">
-              “{dailyVerse.verse}”
-            </blockquote>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-[#6E5F53] font-serif tracking-wide">
-                — {dailyVerse.reference}
-              </span>
-              {dailyVerse.reflection && (
-                <>
-                  <span className="text-[#C8B8A6]" aria-hidden="true">·</span>
-                  <span className="text-xs text-[#827163] italic">
-                    {dailyVerse.reflection}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={onNextVerse}
-              className="px-4 py-2 text-xs font-medium text-[#2D231C] bg-[#FAF7F2] border border-[#E2D4C3] rounded-lg hover:bg-[#F3ECE2] transition-colors whitespace-nowrap"
-            >
-              Another Verse
-            </button>
-            <button
-              onClick={() => setActiveTab('scripture')}
-              className="px-4 py-2 text-xs font-medium text-white bg-[#B84A2A] rounded-lg hover:bg-[#A33F23] transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-xs"
-            >
-              <span>Explore All</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      </section>
+      {/* Daily Inspirational Scripture Component */}
+      <DailyScripture
+        initialVerse={dailyVerse}
+        onExploreAll={() => setActiveTab('scripture')}
+      />
 
       {/* The 6 Core Spaces Bento Grid */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

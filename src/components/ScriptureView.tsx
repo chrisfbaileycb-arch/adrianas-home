@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScriptureVerse, UserRole } from '../types';
 import { BookOpen, Heart, Copy, Check, ChevronRight, Plus, Search, Sparkles } from 'lucide-react';
+import { DailyScripture } from './DailyScripture';
 
 interface ScriptureViewProps {
   verses: ScriptureVerse[];
@@ -109,70 +110,11 @@ export const ScriptureView: React.FC<ScriptureViewProps> = ({
         )}
       </div>
 
-      {/* Featured Large Contemplation Card */}
-      {currentVerse && (
-        <section className="bg-white border border-[#E4D7C8] rounded-3xl p-8 sm:p-12 shadow-sm relative overflow-hidden text-center space-y-6">
-          <div className="flex items-center justify-center gap-2 text-xs text-[#8F7F72]">
-            <span className="text-[#B84A2A] font-medium">{currentVerse.category}</span>
-            <span aria-hidden="true">·</span>
-            <span>Focus for this moment</span>
-          </div>
-
-          <blockquote className="font-serif text-2xl sm:text-4xl text-[#2B211A] leading-relaxed max-w-3xl mx-auto italic font-normal">
-            “{currentVerse.verse}”
-          </blockquote>
-
-          <div className="space-y-2">
-            <cite className="not-italic font-serif text-base sm:text-lg font-semibold text-[#665649] tracking-wider block">
-              — {currentVerse.reference}
-            </cite>
-            {currentVerse.reflection && (
-              <p className="text-xs sm:text-sm text-[#827163] max-w-xl mx-auto font-prose-serif leading-relaxed italic">
-                {currentVerse.reflection}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-center gap-3 pt-4">
-            <button
-              onClick={onNextVerse}
-              className="flex items-center gap-2 px-5 py-2.5 text-xs font-medium text-white bg-[#B84A2A] rounded-xl hover:bg-[#A33F23] transition-colors shadow-xs"
-            >
-              <span>Another verse</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-
-            <button
-              onClick={() => handleCopy(currentVerse)}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-[#4A3E34] bg-[#FAF7F2] border border-[#E8DFD3] rounded-xl hover:bg-[#F3ECE2] transition-colors"
-            >
-              {copiedId === currentVerse.id ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-[#059669]" />
-                  <span>Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={() => onToggleFavoriteVerse(currentVerse.id)}
-              className={`p-2.5 border rounded-xl transition-colors ${
-                currentVerse.isFavorite
-                  ? 'bg-[#FBECE6] text-[#B84A2A] border-[#F2C8B5]'
-                  : 'bg-[#FAF7F2] text-[#695C51] border-[#E8DFD3] hover:text-[#2D231C]'
-              }`}
-              title={currentVerse.isFavorite ? 'Bookmarked' : 'Bookmark verse'}
-            >
-              <Heart className={`w-4 h-4 ${currentVerse.isFavorite ? 'fill-current' : ''}`} />
-            </button>
-          </div>
-        </section>
-      )}
+      {/* Featured Daily Scripture Component */}
+      <DailyScripture
+        initialVerse={currentVerse}
+        onToggleFavorite={onToggleFavoriteVerse}
+      />
 
       {/* Filter and Search Controls */}
       <div className="space-y-4 pt-4">

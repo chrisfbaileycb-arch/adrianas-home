@@ -48,8 +48,11 @@ def main():
             print("Created price:", pr["lookup_key"])
         else:
             print("Price exists:", pr["lookup_key"])
-    acct = stripe.Account.retrieve()
-    print("Account country:", acct.get("country"))
+    try:
+        acct = stripe.Account.retrieve()
+        print("Account country:", acct.get("country"))
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
