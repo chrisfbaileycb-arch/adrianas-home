@@ -41,7 +41,7 @@ def test_get_adriana_no_pin_hash(s):
     assert data["tenant"]["slug"] == "adriana"
 
 
-# ---- Verify PIN ----
+# ---- Verify PIN (POST legacy) ----
 def test_verify_pin_success(s):
     r = s.post(f"{API}/tenants/adriana/verify-pin", json={"pin": "1984"})
     assert r.status_code == 200
@@ -50,6 +50,20 @@ def test_verify_pin_success(s):
 
 def test_verify_pin_wrong(s):
     r = s.post(f"{API}/tenants/adriana/verify-pin", json={"pin": "0000"})
+    assert r.status_code == 401
+
+
+# ---- Verify PIN (GET - new) ----
+@pytest.mark.parametrize("slug,pin", [("adriana", "1984"), ("miller", "2024"), ("lofi-nest", "1234")])
+def test_verify_pin_get_success(s, slug, pin):
+    r = s.get(f"{API}/tenants/{slug}/verify-pin", params={"pin": pin})
+    assert r.status_code == 200, r.text
+    assert r.json()["success"] is True
+
+
+@pytest.mark.parametrize("slug", ["adriana", "miller", "lofi-nest"])
+def test_verify_pin_get_wrong(s, slug):
+    r = s.get(f"{API}/tenants/{slug}/verify-pin", params={"pin": "0000"})
     assert r.status_code == 401
 
 

@@ -1,0 +1,29 @@
+{
+  "summary": "PRIMARY BUG FIXED & VERIFIED: Front Porch PIN gate correctly unlocks the dashboard on /@adriana (1984), /@miller (2024), /@lofi-nest (1234) via keypad entry; wrong PIN (0000) shows 'Incorrect PIN' error and stays on porch. Also verified the quick 'Tap for Guest PIN (1984)' button unlock on /@adriana. After unlock, dashboard shows Home, Family Albums, Thoughts tabs plus modules (Scripture, Recipes, Daily Planner, Family Albums). Backend pytest: 15/15 passing (added parametrized GET verify-pin tests for all 3 tenants + wrong-PIN 401 cases). Stripe E2E: Subscribe form (sanctuary-name-input, slug-input, owner-email-input, family-pin-input, continue-to-theme-btn, subscribe-launch-btn) works; POST /api/payments/checkout returns 200 with valid Stripe hosted checkout URL ($40/yr, correct metadata including slug); GET /api/payments/status/{sid} returns pending with correct slug in metadata. Full payment on Stripe hosted page NOT completed — blocked by Stripe sandbox UI (Link forced signup + 'unclaimed sandbox' banner, same as iteration_1).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Stripe hosted checkout payment completion -> /payment/success provisioning", "issue": "Cannot be driven headlessly: Stripe sandbox page forces Link signup (phone verification) and shows 'unclaimed sandbox' banner. Everything up to the Stripe redirect, and the backend status/provision path, is verified. Needs manual one-click test OR Checkout Session creation with payment_method_types=['card'] to disable Link.", "affected_selectors": ["payment-success-view", "enter-sanctuary-btn", "public-bio-link", "copy-owner-link-btn"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_hearth_api.py", "/app/test_reports/pytest/hearth_api.xml"],
+  "action_items": [
+    "(Optional) On stripe.checkout.Session.create pass payment_method_types=['card'] to disable Link so automated QA can complete the hosted page.",
+    "(Optional) FrontPorchView.handleQuickUnlock() hardcodes '1984'; works only on /@adriana. Low priority since the keypad path works for all tenants.",
+    "Main agent can self-test the final Stripe payment completion with one real test-card checkout (30s) — backend _mark_paid provisioning is wired and idempotent."
+  ],
+  "critical_code_review_comments": [
+    "FrontPorchView.tsx handleQuickUnlock always uses '1984' instead of the current tenant's PIN (minor; only affects @adriana link anyway).",
+    "server.py still uses deprecated `stripe.error.InvalidRequestError`; prefer `stripe.InvalidRequestError`.",
+    "Firestore unreachable in preview env produces harmless console errors; LocalStorage fallback working as designed."
+  ],
+  "updated_files": ["/app/backend/tests/test_hearth_api.py"],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "100% on PIN unlock regression; ~85% on Stripe (redirect + API verified, hosted-page completion blocked by sandbox UI)"},
+  "test_credentials": "adriana=1984, miller=2024, lofi-nest=1234; Stripe 4242 4242 4242 4242",
+  "seed_data_creation": "Created Stripe checkout session for slug=qafam7569 (pending; not completed).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "PIN unlock regression bug is RESOLVED and covered by both backend tests (GET verify-pin for all 3 seeds) and manual browser verification. Use get_by_role('button', name=<digit>, exact=True) for keypad clicks — a plain :has-text selector matches the 'Guest PIN (1984)' hint button too. Only remaining unverified leg is Stripe hosted-page payment completion (blocked by sandbox Link UI); backend provisioning on paid status is already wired."
+}
