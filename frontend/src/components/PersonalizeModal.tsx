@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   UserProfile,
   SportsTeam,
@@ -97,6 +97,25 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
   };
 
   const accentPresets = ['#B84A2A', '#7C3AED', '#0E7490', '#15803D', '#BE123C', '#B45309', '#1E3A8A', '#9333EA'];
+
+  // Live accent preview — recolor the space instantly while the modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.documentElement.style.setProperty('--accent', accentColor);
+    }
+  }, [accentColor, isOpen]);
+
+  // Reset the edited accent to the saved value each time the studio opens
+  useEffect(() => {
+    if (isOpen) setAccentColor(profile.accentColor || '#B84A2A');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Cancel/close without saving: restore the last-saved accent
+  const handleCancel = () => {
+    document.documentElement.style.setProperty('--accent', profile.accentColor || '#B84A2A');
+    onClose();
+  };
 
   // Sports team search & filter
   const [teamSearchQuery, setTeamSearchQuery] = useState('');
@@ -267,7 +286,7 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
       role="dialog"
       aria-modal="true"
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in"
-      onClick={onClose}
+      onClick={handleCancel}
     >
       <div
         className="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-[#E8DFD3]"
@@ -277,7 +296,7 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
         <div className="p-6 border-b border-[#E8DFD3] flex items-center justify-between bg-[#FAF7F2]">
           <div className="space-y-0.5">
             <h2 className="font-serif text-2xl font-bold text-[#2D231C] flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#B84A2A]" />
+              <Sparkles className="w-5 h-5" style={{ color: 'var(--accent, #B84A2A)' }} />
               <span>My Personal Expression Page Studio</span>
             </h2>
             <p className="text-xs text-[#8F7F72]">
@@ -285,7 +304,7 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="p-1 text-[#8F7F72] hover:text-[#2D231C] rounded-md transition-colors"
           >
             <X className="w-5 h-5" />
@@ -1034,7 +1053,7 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
         <div className="p-4 sm:p-6 border-t border-[#E8DFD3] flex items-center justify-between bg-[#FAF7F2]">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleCancel}
             className="px-4 py-2 text-xs text-[#736558] hover:text-[#2D231C]"
           >
             Cancel
@@ -1042,7 +1061,8 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
           <button
             type="button"
             onClick={handleSaveAll}
-            className="px-6 py-2 text-xs font-medium text-white bg-[#B84A2A] rounded-xl hover:bg-[#A33F23] transition-colors shadow-xs flex items-center gap-1.5"
+            style={{ backgroundColor: 'var(--accent, #B84A2A)' }}
+            className="px-6 py-2 text-xs font-medium text-white rounded-xl hover:opacity-90 transition-opacity shadow-xs flex items-center gap-1.5"
           >
             <Check className="w-4 h-4" />
             <span>Save My Personal Expression Page</span>

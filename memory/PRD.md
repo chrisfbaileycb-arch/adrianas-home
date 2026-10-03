@@ -28,6 +28,7 @@ A "MySpace-reborn" platform: a sovereign, private, family/friends-only space any
 - **Original Music Library**: 8 royalty-free starter tracks (`data/musicLibrary.ts`) with inline preview + add-to-shelf in the Personalize → Music tab.
 - **Guided Onboarding** (`OwnerOnboarding.tsx`): first-run owner checklist (space live → customize look → add music → copy bio link) with progress + persistence.
 - **Mobile polish**: TenantBar owner top-strip now wraps (flex-wrap) to avoid horizontal overflow at 390px.
+- **Live Accent Preview**: the space recolors instantly while dragging/selecting the accent color (updates `--accent` live); reverts to the saved color on Cancel/close, commits on Save.
 - Tested: backend 15/15; PIN unlock verified for all 3 tenants; Stripe checkout+redirect+status verified; all 4 new features verified end-to-end by testing agent (iteration_3).
 
 ## Known limitations / notes
