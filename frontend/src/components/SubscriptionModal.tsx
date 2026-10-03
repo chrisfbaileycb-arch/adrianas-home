@@ -91,49 +91,34 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     setErrorMsg(null);
 
     try {
-      // 1. Create Checkout Session via Stripe API
-      await tenantApi.createCheckoutSession({
-        planType,
-        slug: slug.trim(),
-        sanctuaryName: sanctuaryName.trim(),
-        ownerEmail: ownerEmail.trim(),
-      });
-
-      // 2. Trigger Stripe Webhook / Backend Provisioning
-      const result = await tenantApi.createTenant({
+      // Stash provisioning details so the /payment/success page can create the
+      // sanctuary once Stripe confirms the subscription.
+      const pending = {
         slug: slug.trim(),
         sanctuaryName: sanctuaryName.trim(),
         familyPin: familyPin.trim(),
         activeTheme,
         modulesEnabled,
-        outboundLinks: {
-          googlePhotosUrl: googlePhotosUrl.trim() || undefined,
-        },
+        outboundLinks: { googlePhotosUrl: googlePhotosUrl.trim() || undefined },
         planType,
         ownerEmail: ownerEmail.trim(),
-      });
+      };
+      localStorage.setItem('hearth_pending_tenant', JSON.stringify(pending));
 
-      setProvisionResult({
-        slug: result.tenant.slug,
-        sanctuaryName: result.tenant.sanctuaryName,
-        adminSetupUrl: result.adminSetupUrl,
-      });
-
-      // Synchronize newly created sanctuary to Firestore backend
-      saveTenantToFirestore({
-        slug: result.tenant.slug,
-        sanctuaryName: result.tenant.sanctuaryName,
+      // Real Stripe Checkout — redirect to Stripe's hosted page.
+      const { checkout_url } = await tenantApi.createCheckout(planType, {
+        slug: pending.slug,
+        sanctuaryName: pending.sanctuaryName,
+        familyPin: pending.familyPin,
         activeTheme,
-        modulesEnabled,
+        modulesEnabled: JSON.stringify(modulesEnabled),
+        ownerEmail: pending.ownerEmail,
         planType,
-        subscriptionStatus: 'active',
-        ownerEmail: ownerEmail.trim(),
-      }).catch((e) => console.warn('Firestore tenant provision:', e));
+      });
 
-      setStep(3);
+      window.location.href = checkout_url;
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error provisioning sanctuary. Please try again.');
-    } finally {
+      setErrorMsg(err.message || 'Error connecting to Stripe. Please try again.');
       setIsProcessing(false);
     }
   };

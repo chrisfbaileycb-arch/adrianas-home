@@ -1,5 +1,7 @@
 import { TenantSanctuary } from '../types';
 
+const API = (import.meta.env.REACT_APP_BACKEND_URL as string) || '';
+
 export const DEFAULT_TENANT: TenantSanctuary = {
   slug: 'adriana',
   ownerId: 'owner-adriana-01',
@@ -18,22 +20,19 @@ export const DEFAULT_TENANT: TenantSanctuary = {
 };
 
 export const tenantApi = {
-  // Extract slug from URL pathname (e.g. /@adriana or /adriana or ?sanctuary=adriana)
   getSlugFromUrl(): string {
     if (typeof window === 'undefined') return 'adriana';
-    
-    // Check search params first
+
     const params = new URLSearchParams(window.location.search);
     const querySlug = params.get('s') || params.get('sanctuary') || params.get('slug');
     if (querySlug) {
       return querySlug.toLowerCase().replace(/^@/, '');
     }
 
-    // Check pathname
     const path = window.location.pathname.replace(/^\/+/, '');
     if (path && path !== 'index.html' && !path.startsWith('api/')) {
       const firstSegment = path.split('/')[0].toLowerCase().replace(/^@/, '');
-      if (firstSegment && firstSegment !== 'checkout') {
+      if (firstSegment && firstSegment !== 'checkout' && firstSegment !== 'payment') {
         return firstSegment;
       }
     }
@@ -41,29 +40,19 @@ export const tenantApi = {
     return 'adriana';
   },
 
-  // Check if current user is owner (via query param, sessionStorage, or local key)
   checkIsOwner(slug: string, tenantOwnerId?: string): boolean {
     if (typeof window === 'undefined') return false;
-
-    // Check query param e.g. ?role=owner&ownerKey=...
     const params = new URLSearchParams(window.location.search);
     const roleParam = params.get('role');
     const ownerKeyParam = params.get('ownerKey');
-
-    const storedKey = sessionStorage.getItem(`hearth_owner_${slug}`) || localStorage.getItem(`hearth_owner_${slug}`);
+    const storedKey =
+      sessionStorage.getItem(`hearth_owner_${slug}`) || localStorage.getItem(`hearth_owner_${slug}`);
 
     if (roleParam === 'owner' || (tenantOwnerId && ownerKeyParam === tenantOwnerId)) {
-      if (tenantOwnerId) {
-        sessionStorage.setItem(`hearth_owner_${slug}`, tenantOwnerId);
-      }
+      if (tenantOwnerId) sessionStorage.setItem(`hearth_owner_${slug}`, tenantOwnerId);
       return true;
     }
-
-    if (storedKey && (!tenantOwnerId || storedKey === tenantOwnerId)) {
-      return true;
-    }
-
-    // Default: adriana is owner if locally set, or for prototype convenience if owner toggle clicked
+    if (storedKey && (!tenantOwnerId || storedKey === tenantOwnerId)) return true;
     return false;
   },
 
@@ -79,7 +68,7 @@ export const tenantApi = {
   async fetchTenant(slug: string): Promise<TenantSanctuary> {
     const cleanSlug = slug.toLowerCase().replace(/^@/, '');
     try {
-      const res = await fetch(`/api/tenants/${cleanSlug}`);
+      const res = await fetch(`${API}/api/tenants/${cleanSlug}`);
       if (res.ok) {
         const data = await res.json();
         return data.tenant;
@@ -88,10 +77,7 @@ export const tenantApi = {
       console.warn(`Could not reach /api/tenants/${cleanSlug}, using local fallback:`, e);
     }
 
-    // Fallback if backend route not reached or during client-only transition
     if (cleanSlug === 'adriana') return DEFAULT_TENANT;
-    
-    // Check localStorage fallback for created tenants
     try {
       const local = localStorage.getItem(`tenant_${cleanSlug}`);
       if (local) return JSON.parse(local);
@@ -104,9 +90,11 @@ export const tenantApi = {
     };
   },
 
-  async fetchTenantsList(): Promise<{ slug: string; sanctuaryName: string; activeTheme: string; planType?: string }[]> {
+  async fetchTenantsList(): Promise<
+    { slug: string; sanctuaryName: string; activeTheme: string; planType?: string }[]
+  > {
     try {
-      const res = await fetch('/api/tenants');
+      const res = await fetch(`${API}/api/tenants`);
       if (res.ok) {
         const data = await res.json();
         return data.tenants;
@@ -115,14 +103,14 @@ export const tenantApi = {
 
     return [
       { slug: 'adriana', sanctuaryName: "Adriana's Home", activeTheme: 'sanctuary_warm', planType: 'yearly' },
-      { slug: 'miller', sanctuaryName: "The Miller Family Sanctuary", activeTheme: 'sage_garden', planType: 'monthly' },
+      { slug: 'miller', sanctuaryName: 'The Miller Family Sanctuary', activeTheme: 'sage_garden', planType: 'monthly' },
       { slug: 'lofi-nest', sanctuaryName: 'The Lo-Fi Hearth', activeTheme: 'lofi_dark', planType: 'yearly' },
     ];
   },
 
   async verifyPin(slug: string, pin: string): Promise<boolean> {
     try {
-      const res = await fetch(`/api/tenants/${slug}/verify-pin`, {
+      const res = await fetch(`${API}/api/tenants/${slug}/verify-pin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin }),
@@ -132,9 +120,7 @@ export const tenantApi = {
         return data.success === true;
       }
     } catch {}
-
-    // Fallback checks
-    return pin === '1984' || pin === '2024' || pin === '1234';
+    return false;
   },
 
   async createTenant(data: {
@@ -148,49 +134,40 @@ export const tenantApi = {
     ownerEmail: string;
   }): Promise<{ success: boolean; tenant: TenantSanctuary; adminSetupUrl: string }> {
     try {
-      const res = await fetch('/api/tenants', {
+      const res = await fetch(`${API}/api/tenants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
       if (res.ok) {
         const result = await res.json();
-        // Also cache locally for instant client access
         localStorage.setItem(`tenant_${result.tenant.slug}`, JSON.stringify(result.tenant));
         sessionStorage.setItem(`hearth_owner_${result.tenant.slug}`, result.tenant.ownerId);
         return result;
+      } else if (res.status === 409) {
+        // Already provisioned (e.g. by Stripe webhook) — treat as success.
+        const existing = await this.fetchTenant(data.slug);
+        sessionStorage.setItem(`hearth_owner_${data.slug}`, existing.ownerId);
+        return {
+          success: true,
+          tenant: existing,
+          adminSetupUrl: `/@${data.slug}?role=owner&ownerKey=${existing.ownerId}`,
+        };
       } else {
         const err = await res.json();
-        throw new Error(err.error || 'Failed to create tenant');
+        throw new Error(err.detail || err.error || 'Failed to create tenant');
       }
     } catch (e: any) {
-      console.warn('Backend createTenant failed, using local simulation:', e);
-      // Client-side simulation fallback
-      const newTenant: TenantSanctuary = {
-        slug: data.slug,
-        ownerId: `owner-${Date.now()}`,
-        sanctuaryName: data.sanctuaryName,
-        activeTheme: data.activeTheme,
-        modulesEnabled: data.modulesEnabled,
-        outboundLinks: data.outboundLinks,
-        planType: data.planType,
-        ownerEmail: data.ownerEmail,
-        subscriptionStatus: 'active',
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem(`tenant_${data.slug}`, JSON.stringify(newTenant));
-      sessionStorage.setItem(`hearth_owner_${data.slug}`, newTenant.ownerId);
-      return {
-        success: true,
-        tenant: newTenant,
-        adminSetupUrl: `/${data.slug}?role=owner&ownerKey=${newTenant.ownerId}`,
-      };
+      throw e;
     }
   },
 
-  async updateTenant(slug: string, updates: Partial<TenantSanctuary> & { familyPin?: string }): Promise<boolean> {
+  async updateTenant(
+    slug: string,
+    updates: Partial<TenantSanctuary> & { familyPin?: string }
+  ): Promise<boolean> {
     try {
-      const res = await fetch(`/api/tenants/${slug}`, {
+      const res = await fetch(`${API}/api/tenants/${slug}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -201,8 +178,6 @@ export const tenantApi = {
         return true;
       }
     } catch {}
-
-    // Fallback: save to localStorage
     try {
       const existing = await this.fetchTenant(slug);
       const merged = { ...existing, ...updates };
@@ -213,50 +188,28 @@ export const tenantApi = {
     }
   },
 
-  async createCheckoutSession(data: {
-    planType: 'monthly' | 'yearly';
-    slug: string;
-    sanctuaryName: string;
-    ownerEmail: string;
-  }): Promise<{ id: string; url: string; priceLabel: string }> {
-    try {
-      const res = await fetch('/api/checkout/create-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch {}
-
-    const isAnnual = data.planType === 'yearly';
-    return {
-      id: `cs_sim_${Date.now()}`,
-      url: `/checkout/success?slug=${data.slug}&plan=${data.planType}`,
-      priceLabel: isAnnual ? '$40.00 / year' : '$5.00 / month',
-    };
+  // Real Stripe checkout — returns the hosted checkout URL to redirect to.
+  async createCheckout(
+    planType: 'monthly' | 'yearly',
+    metadata: Record<string, string>
+  ): Promise<{ checkout_url: string; session_id: string }> {
+    const res = await fetch(`${API}/api/payments/checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planType, origin_url: window.location.origin, metadata }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not start checkout');
+    }
+    return res.json();
   },
 
-  async triggerStripeWebhookSimulation(slug: string, sanctuaryName: string, planType: 'monthly' | 'yearly', email: string): Promise<any> {
-    try {
-      const res = await fetch('/api/webhooks/stripe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'checkout.session.completed',
-          data: {
-            object: {
-              metadata: { slug, sanctuaryName, planType, ownerEmail: email },
-              amount_total: planType === 'yearly' ? 4000 : 500,
-              customer_details: { email },
-            },
-          },
-        }),
-      });
-      return await res.json();
-    } catch {
-      return { received: true, simulated: true };
-    }
+  async getPaymentStatus(
+    sessionId: string
+  ): Promise<{ status: string; payment_status: string; slug: string }> {
+    const res = await fetch(`${API}/api/payments/status/${sessionId}`);
+    if (!res.ok) throw new Error('Could not fetch payment status');
+    return res.json();
   },
 };
