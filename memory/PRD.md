@@ -24,7 +24,11 @@ A "MySpace-reborn" platform: a sovereign, private, family/friends-only space any
 - FastAPI tenant API: list/get/create/update tenants, PIN verify (POST + GET), seeded tenants adriana/miller/lofi-nest.
 - REAL Stripe subscription flow: `/api/payments/checkout` → hosted checkout → `/payment/success` polls `/api/payments/status/{id}` → provisions sanctuary (idempotent; also via webhook `/api/stripe/webhook`).
 - Bug fixes: guest PIN unlock (switched verify to reliable GET); "Adriana's" apostrophe across title/nav/home/notification.
-- Tested: backend 15/15; PIN unlock verified for all 3 tenants; Stripe checkout+redirect+status verified.
+- **Space Personalization**: added Accent Color picker (8 presets + custom) applied via `--accent` CSS var; existing themes/fonts/flowers/layouts retained.
+- **Original Music Library**: 8 royalty-free starter tracks (`data/musicLibrary.ts`) with inline preview + add-to-shelf in the Personalize → Music tab.
+- **Guided Onboarding** (`OwnerOnboarding.tsx`): first-run owner checklist (space live → customize look → add music → copy bio link) with progress + persistence.
+- **Mobile polish**: TenantBar owner top-strip now wraps (flex-wrap) to avoid horizontal overflow at 390px.
+- Tested: backend 15/15; PIN unlock verified for all 3 tenants; Stripe checkout+redirect+status verified; all 4 new features verified end-to-end by testing agent (iteration_3).
 
 ## Known limitations / notes
 - Stripe sandbox hosted "Pay" page can't be automated (Link signup + unclaimed-sandbox banner) — real customers pay normally; owner should claim the sandbox via the Payments tab to go live.

@@ -1,0 +1,29 @@
+{
+  "summary": "Verified all 4 new frontend features on /@adriana?role=owner. (1) OWNER ONBOARDING: appears after PIN 1984 unlock with data-testid='owner-onboarding'; all step buttons (look/music/share/close/finish) present; share click copies link + marks that row complete (progress goes to '2 of 4'); look/music buttons open PersonalizeModal to appearance/music tab respectively; finish persists 'true' to localStorage.hearth_onboard_done_adriana and the card does NOT reappear on reload. (2) ACCENT COLOR: 8 preset swatches (accent-#B84A2A ... accent-#9333EA) + custom color input (accent-custom) rendered; selecting #7C3AED and saving sets document.documentElement style --accent to #7C3AED and onboarding look button computed backgroundColor = rgb(124,58,237). (3) MUSIC LIBRARY: 8/8 tracks (library-play-lib-1..8 + library-add-lib-1..8) rendered; play toggle fires without JS crash (external soundhelix audio may not play — expected per env); Add on lib-2 flips button text to 'Added' and disables it; 'Morning Linen' appears in 'Your Music Collection'. (4) THEME + FONT: After save, body className = 'antialiased font-choice-sans theme-sage'. MOBILE 390x844: onboarding renders as bottom sheet full-width (x=0, width=390). Front Porch overflow = 1 (a decorative -right-32 circle div, non-interactive). Dashboard shows 11 overflowing nodes inside the TenantBar + Navbar (horizontal scroll on mobile). Modal internal tab strip has overflow-x-auto (by design) and triggers 17 overflowing children — these are inside the modal's scrollable tab row and do not break the modal itself; the accent swatches and all 8 library tracks are reachable and usable on mobile.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "FrontPorchView (mobile 390)", "issues": ["Decorative circle 'absolute -top-32 -right-32 w-96 h-96' extends to right=510 past 390 viewport, causing a tiny horizontal scroll on the Front Porch. Add overflow-hidden to the porch container or clamp the decorative blob."]},
+      {"screen": "TenantBar + Navbar (mobile 390)", "issues": ["Owner-mode header strip overflows viewport (buttons like 'Change PIN', 'Ad Flywheel ($10 Tests)', 'Spin Up Sanctuary ($5/mo or $40/yr)' + tenant switcher extend to right=457-493). Dashboard scrolls horizontally on mobile. Consider wrapping these top-strip buttons in an overflow-x-auto rail or collapsing CTAs behind a menu on <sm."]}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/mobile_final.png"],
+  "action_items": [
+    "Minor: On mobile (<=390), the TenantBar/Navbar top strip overflows and causes horizontal scroll on the dashboard. Wrap it in overflow-x-auto or collapse owner CTAs into a menu.",
+    "Minor: FrontPorchView decorative circle overflows viewport; add overflow-hidden to the porch wrapper (visual-only, doesn't block the keypad)."
+  ],
+  "critical_code_review_comments": [
+    "PersonalizeModal.tsx is now ~1055 lines — consider splitting the 5 tabs into child components for maintainability.",
+    "MUSIC_LIBRARY uses external https://www.soundhelix.com URLs; preview likely blocked in some networks. Consider self-hosting or shipping a true royalty-free local asset so the Play button is more than a toggle.",
+    "OwnerOnboarding reads localStorage synchronously in useState initializer — fine for now, but the per-step persistence key 'hearth_onboard_steps_<slug>' is never cleared when the owner clicks the top-level 'done' flag; harmless but worth noting."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100% on the 4 new feature flows; mobile polish passes for onboarding (full-width bottom sheet) and modal usability, FAILS cleanly for horizontal overflow on dashboard TenantBar/Navbar + 1 decorative blob on Front Porch"},
+  "test_credentials": "adriana PIN 1984; owner mode via ?role=owner",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 4 features (onboarding, accent, music library, personalization) are verified end-to-end on desktop. Only follow-up items are two mobile layout tweaks (TenantBar + Navbar overflow on <=390, decorative circle on FrontPorch). To re-run: open /@adriana?role=owner, localStorage.clear(), reload, enter 1984 via keypad, onboarding appears. Note: Firestore is unreachable in preview env — do NOT use wait_for_load_state('networkidle'); use 'domcontentloaded' + fixed waits. Modal tab headers must be clicked via dialog-scoped locator (page.locator('[role=dialog]').locator('button:has-text(\"Favorite Music\")')) because there is also a 'Favorite Music' quick-chip on the dashboard that intercepts clicks."
+}

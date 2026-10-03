@@ -66,7 +66,7 @@ export const TenantBar: React.FC<TenantBarProps> = ({
       <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
         
         {/* Left: Active Slug and Tenant Switcher */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
@@ -134,7 +134,7 @@ export const TenantBar: React.FC<TenantBarProps> = ({
         </div>
 
         {/* Right: Role Permission Split & Pin Manager */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
           
           {/* Owner Mode vs. Guest Mode Toggle */}
           <div className="flex items-center bg-[#3F3329] p-0.5 rounded-lg border border-[#524438]">
