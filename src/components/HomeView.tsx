@@ -167,36 +167,28 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {userProfile.sportsTeams.map((team) => {
-                  const isBroncos = team.name.toLowerCase().includes('bronco');
+                {userProfile.sportsTeams.map((teamName) => {
+                  const isBroncos = teamName.toLowerCase().includes('bronco');
                   return (
                     <div
-                      key={team.id}
+                      key={teamName}
                       className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all ${
                         isBroncos
                           ? 'bg-[#FAF7F2] border-[#FB4F14]/50 shadow-xs'
                           : 'bg-[#FAF7F2] border-[#E8DFD3]'
                       }`}
                     >
-                      <TeamLogo team={team} size="md" />
+                      <TeamLogo teamName={teamName} className="w-8 h-8 rounded-md shrink-0 shadow-2xs" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className="font-semibold text-xs text-[#2D231C] truncate">
-                            {team.name}
-                          </span>
-                          <span className="text-[10px] px-1.5 py-0.2 bg-white rounded text-[#736558] border border-[#E2D4C3] font-mono shrink-0">
-                            {team.league}
+                            {teamName}
                           </span>
                         </div>
                         {isBroncos && (
                           <span className="text-[10px] font-bold text-[#FB4F14] block">
                             Adriana's Favorite Team
                           </span>
-                        )}
-                        {team.notes && !isBroncos && (
-                          <p className="text-[11px] text-[#8F7F72] truncate mt-0.5">
-                            {team.notes}
-                          </p>
                         )}
                       </div>
                     </div>

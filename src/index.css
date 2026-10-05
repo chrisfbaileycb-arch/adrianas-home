@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+:root {
+  --accent: #B84A2A;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: #FAF7F2;
+  color: #382E27;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Typography Choices */
+.font-choice-serif {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-choice-newsreader {
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+.font-choice-sans {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+.font-choice-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.font-prose-serif {
+  font-family: 'Newsreader', 'Cormorant Garamond', Georgia, serif;
+}
+
+/* Theme Tints */
+.theme-linen {
+  background-color: #FAF7F2;
+  color: #382E27;
+}
+
+.theme-parchment {
+  background-color: #F7EFE3;
+  color: #3D3025;
+}
+
+.theme-rose-mist {
+  background-color: #FAF2F2;
+  color: #3D2929;
+}
+
+.theme-sage {
+  background-color: #F2F6F3;
+  color: #27382D;
+}
+
+.theme-midnight-warmth {
+  background-color: #1A1410;
+  color: #F5EDE6;
+}
+
+.theme-midnight-warmth header,
+.theme-midnight-warmth nav,
+.theme-midnight-warmth footer {
+  background-color: #211A15 !important;
+  border-color: #382C24 !important;
+  color: #F5EDE6 !important;
+}
+
+.theme-midnight-warmth .bg-white {
+  background-color: #261F1A !important;
+  border-color: #3D322A !important;
+  color: #F5EDE6 !important;
+}
+
+.theme-midnight-warmth .bg-\[\#FAF7F2\] {
+  background-color: #1E1712 !important;
+  border-color: #3D322A !important;
+  color: #E6DAD0 !important;
+}
+
+.theme-midnight-warmth .text-\[\#2D231C\],
+.theme-midnight-warmth .text-\#2D231C,
+.theme-midnight-warmth .text-\[\#2B211A\] {
+  color: #F5EDE6 !important;
+}
+
+.theme-midnight-warmth .text-\[\#736558\],
+.theme-midnight-warmth .text-\[\#6C5E53\],
+.theme-midnight-warmth .text-\[\#4A3C31\] {
+  color: #C8BAAF !important;
+}
+
+.theme-modern-lounge {
+  background-color: #F0EFF4;
+  color: #2B2834;
+}
+
+.theme-neutral-keepsake {
+  background-color: #F4F1EA;
+  color: #353229;
+}
